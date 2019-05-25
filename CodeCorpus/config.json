@@ -1,5 +1,5 @@
 {
-    "witness" : ["Сǿ", ""],
-    "data" : [],
+    "witness" : ["example-master"],
+    "data" : ["example-master"],
     "preprocess" : []
-};
+}

@@ -5,12 +5,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import util.FileIterator;
 import util.ZIPUtil;
 
 public class PreProcessRawProject {
@@ -24,6 +26,16 @@ public class PreProcessRawProject {
 			ZIPUtil.Unzip(f, new File("all_projects"));
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+		String hf = f.getName().substring(0, f.getName().length()-".zip".length());
+		String ff = "all_projects/" + hf;
+		String reg = ".+[^(\\.java)]$";
+		FileIterator fi = new FileIterator(ff, reg);
+		Iterator<File> fitr = fi.EachFileIterator();
+		while (fitr.hasNext()) {
+			File a = fitr.next();
+//			System.out.println("a.getName():" + a.getAbsolutePath());
+			a.delete();
 		}
 	}
 
@@ -46,6 +58,14 @@ public class PreProcessRawProject {
 		}
 		for (File f : wait_handles) {
 			PreProcessOneProject(f);
+		}
+	}
+	
+	public static void main(String[] args) {
+		try {
+			PreProcessRawProject.PreProcess();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
