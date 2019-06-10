@@ -21,14 +21,14 @@ public class PreProcessRawProject {
 //	public static final String unzip_dir = user_home + "/PPYYXUnzip";
 
 	public static void PreProcessOneProject(File f) {
+		String hf = f.getName().substring(0, f.getName().length()-".zip".length());
 		assert f.getName().endsWith(".zip");
+		String ff = "all_projects/" + hf;
 		try {
-			ZIPUtil.Unzip(f, new File("all_projects"));
+			ZIPUtil.Unzip(f, new File(ff));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		String hf = f.getName().substring(0, f.getName().length()-".zip".length());
-		String ff = "all_projects/" + hf;
 		String reg = ".+[^(\\.java)]$";
 		FileIterator fi = new FileIterator(ff, reg);
 		Iterator<File> fitr = fi.EachFileIterator();
@@ -64,6 +64,7 @@ public class PreProcessRawProject {
 	public static void main(String[] args) {
 		try {
 			PreProcessRawProject.PreProcess();
+			System.out.println("Successfully preprocess projects!");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

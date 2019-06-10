@@ -1,5 +1,5 @@
 {
     "witness" : ["example-master"],
     "data" : ["example-master"],
-    "preprocess" : []
+    "preprocess" : ["apache-maven-3.6.1-src.zip"]
 }
