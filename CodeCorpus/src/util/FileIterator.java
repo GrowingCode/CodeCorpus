@@ -18,15 +18,15 @@ public class FileIterator {
 	}
 
 	private void IterateAllFiles(File fdir) {
-		System.out.println("==== begin iterate files ====");
-		System.out.println("fdir.getAbsolutePath():" + fdir.getAbsolutePath());
+//		System.out.println("==== begin iterate files ====");
+//		System.out.println("fdir.getAbsolutePath():" + fdir.getAbsolutePath());
 		if (fdir != null && fdir.exists()) {
 			File[] fall = fdir.listFiles();
 			for (File f : fall) {
 				if (!f.isDirectory()) {
 					if (pattern != null && !pattern.equals("")) {
 						if (f.getName().matches(pattern)) {
-							System.out.println("f.getName():" + f.getName());
+//							System.out.println("f.getName():" + f.getName());
 							files.add(f);
 						}
 					} else {
