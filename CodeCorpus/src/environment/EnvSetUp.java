@@ -80,6 +80,7 @@ public class EnvSetUp {
 				}
 			}
 		}
+		System.out.println("Environment has been set up successfully.");
 	}
 	
 }
