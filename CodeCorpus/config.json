@@ -1,5 +1,5 @@
 {
-    "witness" : ["example-master"],
-    "data" : ["example-master"],
+    "witness" : ["apache-log4j-2.11.2-src"],
+    "data" : ["apache-maven-3.6.1-src"],
     "preprocess" : []
 }
