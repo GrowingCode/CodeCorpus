@@ -1,5 +1,5 @@
 {
     "witness" : ["example-master"],
-    "data" : ["example-master"],
+    "data" : ["simple"],
     "preprocess" : []
 }
