@@ -202,7 +202,7 @@ public class fo extends JFrame {
 	
 	protected void do_browseButton_actionPerformed(ActionEvent e) {
         JFileChooser chooser = new JFileChooser();
-        chooser.setFileFilter(new FileNameExtensionFilter("RARÎÄµµ", "rar"));
+        chooser.setFileFilter(new FileNameExtensionFilter("RAR", "rar"));
         chooser.setAcceptAllFileFilterUsed(false);
         int option = chooser.showOpenDialog(this);
         if (option != JFileChooser.APPROVE_OPTION)
