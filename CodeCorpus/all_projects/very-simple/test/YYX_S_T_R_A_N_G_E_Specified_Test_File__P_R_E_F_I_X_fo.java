@@ -7,7 +7,8 @@ public class fo {
 		while (s.charAt(n) == ' ') {
 			n++;
 		}
+		maven = lookup(Maven.class);
 		return n;
 	}
-	
+
 }
