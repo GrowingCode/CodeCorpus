@@ -1,5 +1,5 @@
 {
     "witness" : ["example-master"],
     "data" : ["very-simple"],
-    "preprocess" : []
+    "preprocess" : ["log4j-trunk.zip"]
 }
