@@ -80,6 +80,11 @@ public class EnvSetUp {
 				}
 			}
 		}
+		File dir = new File(user_home + "/AST_Tensors");
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		FileUtil.CopyFile(new File("config.json"), new File(user_home + "/AST_Tensors/" + "project_config.json"));
 		System.out.println("Environment has been set up successfully.");
 	}
 	
