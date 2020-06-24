@@ -44,37 +44,24 @@ public class fo extends JFrame {
 	protected String getClassName(Object o) {
 		String classString = o.getClass().getName();
 		int dotIndex = classString.lastIndexOf(".");
-
-		// return classString.substring(dotIndex+1);
-		return null;
+		return classString.substring(dotIndex+1);
 	}
 
 	public boolean isString(String sPara) {
 		SecretKeyEntry i = null;
 		int iPLength = sPara.length();
-
-		for (int i7 = 0; i7 < iPLength; i7++) {
-			char c = sPara.charAt(i7);
-			boolean b = false;
-			for (int i1 = 0; i1 < cStr.length; i1++) {
-
+		for (int i = 0; i < iPLength; i++) {
+			char cTemp = sPara.charAt(i);
+			boolean bTemp = false;
+			for (int j = 0; j < cStr.length; j++) {
+				if (cTemp == cStr[j]) {
+					bTemp = true;
+					break;
+				}
 			}
-			// if (!b) {
-			// return false;
-			// }
+			if (!bTemp)
+				return false;
 		}
-		// for (int i = 0; i < iPLength; i++) {
-		// char cTemp = sPara.charAt(i);
-		// boolean bTemp = false;
-		// for (int j = 0; j < cStr.length; j++) {
-		// if (cTemp == cStr[j]) {
-		// bTemp = true;
-		// break;
-		// }
-		// }
-		// if (!bTemp)
-		// return false;
-		// }
 		return true;
 	}
 
@@ -82,19 +69,17 @@ public class fo extends JFrame {
 		String ext = null;
 		String s = f.getName();
 		int i = s.lastIndexOf('.');
-		// if (i > 0 && i < s.length() - 1) {
-		// ext = s.substring(i + 1).toLowerCase();
-		// }
-		// return ext;
-		return null;
+		if (i > 0 && i < s.length() - 1) {
+			ext = s.substring(i + 1).toLowerCase();
+		}
+		return ext;
 	}
 
 	private int countSpaces(String s) {
 		int n = 0;
-
-		// while (s.charAt(n) == ' ') {
-		// n++;
-		// }
+		while (s.charAt(n) == ' ') {
+			n++;
+		}
 		return n;
 	}
 
@@ -107,28 +92,28 @@ public class fo extends JFrame {
 			DefaultTableModel model = (DefaultTableModel) table.getModel();
 			model.setRowCount(0);
 			Vector<String> row = new Vector<String>();
-			// do {
-			// String line = sc.nextLine();
-			// if (line.contains("----------------------")) {
-			// count = (count == 0 ? count + 1 : -1);
-			// continue;
-			// }
-			// if (count == 0)
-			// continue;
-			// if (count == -1)
-			// break;
-			// if (++count % 2 == 0) {
-			// row.add(line);
-			// } else {
-			// String[] split = line.trim().split("\\s+");
-			// for (String string : split) {
-			// row.add(string);
-			// }
-			// model.addRow(row.toArray());
-			// row.clear();
-			// }
-			// } while (sc.hasNext());
-			// process.getInputStream().close();
+			do {
+				String line = sc.nextLine();
+				if (line.contains("----------------------")) {
+					count = (count == 0 ? count + 1 : -1);
+					continue;
+				}
+				if (count == 0)
+					continue;
+				if (count == -1)
+					break;
+				if (++count % 2 == 0) {
+					row.add(line);
+				} else {
+					String[] split = line.trim().split("\\s+");
+					for (String string : split) {
+						row.add(string);
+					}
+					model.addRow(row.toArray());
+					row.clear();
+				}
+			} while (sc.hasNext());
+			process.getInputStream().close();
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
@@ -185,15 +170,6 @@ public class fo extends JFrame {
 				path.add(file.getAbsolutePath());
 			}
 		}
-	}
-
-	public void haha() {
-		List<String> somelist = GetList();
-
-		// for (String li : somelist)
-		// {
-		// System.out.println(li);
-		// }
 	}
 
 	public List<String> GetList() {
