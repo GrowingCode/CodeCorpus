@@ -80,7 +80,7 @@ public class EnvSetUp {
 				}
 			}
 		}
-		String ast_meta = user_home + "/ASTMeta";
+		String ast_meta = user_home + "/AST_Metas";
 		File dir = new File(ast_meta);
 		if (!dir.exists()) {
 			dir.mkdirs();
