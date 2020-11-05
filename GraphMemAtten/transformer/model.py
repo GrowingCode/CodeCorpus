@@ -15,6 +15,15 @@ def positional_embedding(pos_seq, inv_freq, bsz=None):
     return pos_emb[:, None, :]
 
 
+def rel_shift(x):
+  x_size = tf.shape(input=x)
+  x = tf.pad(tensor=x, paddings=[[0, 0], [1, 0], [0, 0], [0, 0]])
+  x = tf.reshape(x, [x_size[1] + 1, x_size[0], x_size[2], x_size[3]])
+  x = tf.slice(x, [1, 0, 0, 0], [-1, -1, -1, -1])
+  x = tf.reshape(x, x_size)
+  return x
+
+
 def positionwise_FF(inp, d_model, d_inner, dropout, kernel_initializer,
                     scope='ff', is_training=True):
 #   output = inp
@@ -32,16 +41,6 @@ def positionwise_FF(inp, d_model, d_inner, dropout, kernel_initializer,
 #     output = tf.contrib.layers.layer_norm(output + inp, begin_norm_axis=-1)
     output = tf.keras.layers.LayerNormalization()(output + inp)
   return output
-
-
-def rel_shift(x):
-  x_size = tf.shape(input=x)
-  x = tf.pad(tensor=x, paddings=[[0, 0], [1, 0], [0, 0], [0, 0]])
-  x = tf.reshape(x, [x_size[1] + 1, x_size[0], x_size[2], x_size[3]])
-  x = tf.slice(x, [1, 0, 0, 0], [-1, -1, -1, -1])
-  x = tf.reshape(x, x_size)
-
-  return x
 
 
 def rel_multihead_attn(w, r, r_w_bias, r_r_bias, attn_mask, mems, d_model,
@@ -201,6 +200,7 @@ def _create_mask(qlen, mlen, same_length=False):
     ret = tf.concat([ret[:, :qlen] + mask_l - mask_dia, ret[:, qlen:]], 1)
   return ret
 
+
 def _cache_mem(curr_out, prev_mem, mem_len=None):
   if mem_len is None or prev_mem is None:
     new_mem = curr_out
@@ -330,5 +330,22 @@ def transformer(dec_inp, target, mems, is_training,
         compute_prediction=(is_training <= 0),
         params=shared_params)
     
-    return probs, predictions, loss, new_mems
+    return output, probs, predictions, loss, new_mems
+
+
+class Transformer:
+  
+  def __init__(self):
+    pass
+  
+  ''' TODO convert to standard tensorflow v2 '''
+ 
+  def get_token_output_parameters(self):
+    pass
+  
+
+
+
+
+
 
