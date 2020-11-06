@@ -14,7 +14,7 @@ from utils.accuracy_util import compute_accuracy_of_sequences
 from utils.loss_accurate_util import compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_embeddings
 
 
-class OneSeqBeam:
+class OneSeqBeam():
   
   def __init__(self, transformer_model, multi_position_transfer):
     self.transformer_model = transformer_model
@@ -151,7 +151,7 @@ class OneSeqBeam:
     return ens
   
   def multi_infer(self, mems_before_last, last_token, steps):
-    output, _, _, _, _ = transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, is_training=0, mem_len=oracle_mem_len)
+    output, _, _, _, _ = transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, is_training=0)
     ''' output shape should be [predict_length batch_size feature_size] '''
     ''' output shape should be [1 1 feature_size] '''
     
@@ -159,11 +159,7 @@ class OneSeqBeam:
       return tf.less(i, i_len)
     
     def multi_infer_body(self, i, i_len, o_log_probs, o_ens):
-      '''
-      the transfer function do something like the following:
-      transfer_mat = self.skeleton_multi_decode_transfer[i]
-      t_h = tf.matmul(h, transfer_mat)
-      '''
+      TODO
       t_h = self.multi_position_transfer.transfer(i, output)
       
       o_log_probs_of_this_node, o_ens_of_this_node, _, _, _ = compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_embeddings(False, self.transformer_model.get_token_output_parameters(), -1, t_h)

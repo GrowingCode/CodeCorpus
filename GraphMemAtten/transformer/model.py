@@ -1,6 +1,6 @@
 import tensorflow as tf
 from meta_info.hyper_parameter import d_head, n_head, n_layer, initializer,\
-  d_embed, d_model, n_token, dropout, d_inner, dropatt, top_ks
+  d_embed, d_model, n_token, dropout, d_inner, dropatt, top_ks, oracle_mem_len
 
 
 def positional_embedding(pos_seq, inv_freq, bsz=None):
@@ -132,16 +132,12 @@ def rel_multihead_attn(w, r, r_w_bias, r_r_bias, attn_mask, mems, d_model,
   return output
 
 
-def embedding_lookup(lookup_table, x):
-  return tf.nn.embedding_lookup(params=lookup_table, ids=x)
-
-
 def mask_adaptive_embedding_lookup(x, n_token, d_embed, d_proj, initializer, scope='adaptive_embed'):
   emb_scale = d_proj ** 0.5
   with tf.compat.v1.variable_scope(scope):
     lookup_table = tf.compat.v1.get_variable('lookup_table', [n_token, d_embed],
                                    initializer=initializer)
-    y = embedding_lookup(lookup_table, x)
+    y = tf.nn.embedding_lookup(lookup_table, x)
     if d_proj != d_embed:
       proj_W = tf.compat.v1.get_variable('proj_W', [d_embed, d_proj],
                                initializer=initializer)
@@ -213,7 +209,6 @@ def _cache_mem(curr_out, prev_mem, mem_len=None):
 
 
 def transformer(dec_inp, target, mems, is_training,
-                mem_len=None,
                 same_length=False, clamp_len=-1,
                 untie_r=False,
                 scope='transformer'):
@@ -295,7 +290,7 @@ def transformer(dec_inp, target, mems, is_training,
     
     for i in range(n_layer):
       # cache new mems
-      new_mems.append(_cache_mem(output, mems[i], mem_len))
+      new_mems.append(_cache_mem(output, mems[i], oracle_mem_len))
 
       with tf.compat.v1.variable_scope('layer_{}'.format(i)):
         output = rel_multihead_attn(
