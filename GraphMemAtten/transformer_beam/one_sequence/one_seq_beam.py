@@ -6,7 +6,6 @@ from meta_info.non_hyper_constant import int_type, float_type
 from meta_info.hyper_parameter import oracle_mem_len, top_ks, n_layer,\
   oracle_tgt_len, accuracy_based_on_whole, oracle_predict_mem_len, beam_mode,\
   standard_beam, multi_infer
-from transformer.model import transformer
 from utils.meta_util import get_varied_memory_shape_in_while_loop
 from utils.memory_util import get_recent_fixed_length_memory,\
   update_recent_fixed_length_memory
@@ -38,7 +37,7 @@ class OneSeqBeam():
       
       temp_mems = get_recent_fixed_length_memory(all_mems, oracle_mem_len)
       
-      _, _, _, _, new_mems = transformer(dec_inp, target, temp_mems, is_training=0, mem_len=oracle_mem_len)
+      _, _, _, _, new_mems = self.transformer_model.transformer(dec_inp, target, temp_mems, is_training=0, mem_len=oracle_mem_len)
       new_all_mems = update_recent_fixed_length_memory(all_mems, new_mems)
       
       return (idx + oracle_tgt_len, *new_all_mems)
@@ -118,7 +117,7 @@ class OneSeqBeam():
       ''' l_token shape should be [1, batch_size] '''
       mems = list(mems_tuple)
       ''' mems shape should be [n_layer memory_length batch_size feature_size] '''
-      _, probs, predictions, _, new_mems = transformer(l_token, tf.zeros_like(l_token)-1, mems, is_training=0, mem_len=oracle_mem_len)
+      _, probs, predictions, _, new_mems = self.transformer_model.transformer(l_token, tf.zeros_like(l_token)-1, mems, is_training=0, mem_len=oracle_mem_len)
       ''' probs          should be [1, batch_size, top_ks[-1]] '''
       ''' predictions    should be [1, batch_size, top_ks[-1]] '''
       r_probs = tf.squeeze(probs, [0])
@@ -151,7 +150,7 @@ class OneSeqBeam():
     return ens
   
   def multi_infer(self, mems_before_last, last_token, steps):
-    output, _, _, _, _ = transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, is_training=0)
+    output, _, _, _, _ = self.transformer_model.transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, is_training=0)
     ''' output shape should be [predict_length batch_size feature_size] '''
     ''' output shape should be [1 1 feature_size] '''
     
@@ -159,7 +158,6 @@ class OneSeqBeam():
       return tf.less(i, i_len)
     
     def multi_infer_body(self, i, i_len, o_log_probs, o_ens):
-      TODO
       t_h = self.multi_position_transfer.transfer(i, output)
       
       o_log_probs_of_this_node, o_ens_of_this_node, _, _, _ = compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_embeddings(False, self.transformer_model.get_token_output_parameters(), -1, t_h)
