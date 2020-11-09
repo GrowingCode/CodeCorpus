@@ -117,11 +117,11 @@ class OneSeqBeam():
       ''' l_token shape should be [1, batch_size] '''
       mems = list(mems_tuple)
       ''' mems shape should be [n_layer memory_length batch_size feature_size] '''
-      _, probs, predictions, _, new_mems = self.transformer_model.transformer(l_token, tf.zeros_like(l_token)-1, mems, is_training=0, mem_len=oracle_mem_len)
+      _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(l_token, tf.zeros_like(l_token)-1, mems, is_training=0, mem_len=oracle_mem_len)
       ''' probs          should be [1, batch_size, top_ks[-1]] '''
       ''' predictions    should be [1, batch_size, top_ks[-1]] '''
-      r_probs = tf.squeeze(probs, [0])
-      r_predictions = tf.squeeze(predictions, [0])
+      r_probs = tf.squeeze(r_probs, [0])
+      r_predictions = tf.squeeze(r_predictions, [0])
       ''' r_predictions should be [batch_size, top_ks[-1]] '''
       
       new_probs = batch_cartesian_add_each_scalar_in_vect(probs, r_probs)
