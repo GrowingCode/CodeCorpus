@@ -1,8 +1,8 @@
 import tensorflow as tf
 from meta_info.hyper_parameter import d_head, n_head, n_layer,\
-  d_embed, d_model, n_token, dropout, d_inner, dropatt, top_ks, oracle_mem_len,\
+  d_embed, d_model, n_token, dropout, d_inner, dropatt, oracle_mem_len,\
   untie_r
-from meta_info.non_hyper_constant import normal_initializer
+from meta_info.non_hyper_constant import normal_initializer, top_ks
 from utils.initialize_util import random_normal_variable_initializer,\
   zero_variable_initializer
 
@@ -53,7 +53,7 @@ def _cache_mem(curr_out, prev_mem, mem_len=None):
   return tf.stop_gradient(new_mem)
 
 
-class Transformer:
+class Transformer():
   
   def __init__(self):
     self.vocab_lookup_table = tf.Variable(random_normal_variable_initializer([n_token, d_embed]))
@@ -90,7 +90,7 @@ class Transformer:
     y *= emb_scale
     return y
   
-  def mask_adaptive_logsoftmax(self, hidden, target, compute_prediction,
+  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, compute_prediction,
                                return_mean=True):
     def _logit(x, W, b, proj):
       y = x
@@ -105,6 +105,8 @@ class Transformer:
       nll = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target,
                                                            logits=output)
       ''' ['tf.shape(output):', [128 6 27]] '''
+      ''' ['tf.shape(nll):', [128 6]] '''
+      nll = nll * valid_mask
       if return_mean:
         nll = tf.reduce_mean(input_tensor=nll)
       
@@ -116,8 +118,9 @@ class Transformer:
     
     return probs, predictions, nll
   
-  def transformer(self, dec_inp, target, mems, is_training,
-                  same_length=False, clamp_len=-1,
+  def transformer(self, dec_inp, target, mems, valid_mask, is_training, 
+                  mem_len=oracle_mem_len, 
+                  same_length=False, clamp_len=-1, 
                   untie_r=False):
     """
     cutoffs: a list of python int. Cutoffs for adaptive softmax.
@@ -186,7 +189,7 @@ class Transformer:
     
     for i in range(n_layer):
       # cache new mems
-      new_mems.append(_cache_mem(output, mems[i], oracle_mem_len))
+      new_mems.append(_cache_mem(output, mems[i], mem_len))
       
       t_layer = self.t_layers[i]
       output = t_layer.rel_multihead_attn(
@@ -207,6 +210,7 @@ class Transformer:
     probs, predictions, loss = self.mask_adaptive_logsoftmax(
         hidden=output,
         target=target,
+        valid_mask,
         compute_prediction=(is_training <= 0))
     
     return output, probs, predictions, loss, new_mems

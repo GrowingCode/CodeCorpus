@@ -13,10 +13,19 @@ uniform_initializer = tf.keras.initializers.random_uniform(
           minval=-uniform_range,
           maxval=uniform_range,
           seed=None)
-normal_initializer = tf.compat.v1.initializers.random_normal(
+normal_initializer = tf.keras.initializers.random_normal(
           stddev=normal_stddev,
           seed=None)
-proj_initializer = tf.compat.v1.initializers.random_normal(
+proj_initializer = tf.keras.initializers.random_normal(
           stddev=0.01,
           seed=None)
+
+
+top_ks = [1, 3, 6, 10]
+mrr_max = 10
+
+top_ks_tensors = []
+for i in range(len(top_ks)):
+  top_ks_tensors.append(tf.concat([tf.ones([top_ks[i]]), tf.zeros([top_ks[-1]-top_ks[i]])], axis=0))
+
 

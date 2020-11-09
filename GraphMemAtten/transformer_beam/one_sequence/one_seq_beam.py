@@ -2,8 +2,8 @@ import tensorflow as tf
 from utils.cartesian_util import batch_cartesian_add_each_scalar_in_vect,\
   batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect,\
   cartesian_add_one_dim_vector, cartesian_concat_two_dim_mats
-from meta_info.non_hyper_constant import int_type, float_type
-from meta_info.hyper_parameter import oracle_mem_len, top_ks, n_layer,\
+from meta_info.non_hyper_constant import int_type, float_type, top_ks
+from meta_info.hyper_parameter import oracle_mem_len, n_layer,\
   oracle_tgt_len, accuracy_based_on_whole, oracle_predict_mem_len, beam_mode,\
   standard_beam, multi_infer
 from utils.meta_util import get_varied_memory_shape_in_while_loop

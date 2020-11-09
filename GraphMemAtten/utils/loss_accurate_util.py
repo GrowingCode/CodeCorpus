@@ -1,6 +1,5 @@
 import tensorflow as tf
-from meta_info.hyper_parameter import top_ks, mrr_max
-from meta_info.non_hyper_constant import float_type, int_type
+from meta_info.non_hyper_constant import float_type, int_type, top_ks, mrr_max
 
 
 def compute_logits_given_to_deocde_embed_with_computed_embeddings(computed_embeddings, to_decode_embed):

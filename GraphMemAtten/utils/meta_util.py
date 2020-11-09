@@ -1,5 +1,6 @@
 import tensorflow as tf
-from meta_info.hyper_parameter import n_layer, d_model, top_ks
+from meta_info.hyper_parameter import n_layer, d_model
+from meta_info.non_hyper_constant import top_ks
 
 
 def get_varied_memory_shape_in_while_loop():
