@@ -3,9 +3,9 @@ from utils.cartesian_util import batch_cartesian_add_each_scalar_in_vect,\
   batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect,\
   cartesian_add_one_dim_vector, cartesian_concat_two_dim_mats
 from meta_info.non_hyper_constant import int_type, float_type, top_ks,\
-  standard_beam, multi_infer
+  standard_infer_test, multi_infer_test
 from meta_info.hyper_parameter import oracle_mem_len, n_layer,\
-  oracle_tgt_len, accuracy_based_on_whole, oracle_predict_mem_len
+  oracle_tgt_len, accuracy_based_on_whole, oracle_test_mem_len
 from utils.meta_util import get_varied_memory_shape_in_while_loop
 from utils.memory_util import get_recent_fixed_length_memory,\
   update_recent_fixed_length_memory
@@ -19,8 +19,7 @@ class OneSeqBeam():
     self.transformer_model = transformer_model
     self.multi_position_transfer = multi_position_transfer
   
-  def __call__(self, mems, last_token_before_whole_seq, whole_seq, skt_token_split, beam_mode):
-    ''' note that mems include last_token_before_whole_seq '''
+  def __call__(self, mems, whole_seq, part_seq_skip, decode_mode):
     origin_mems_len = tf.shape(mems[0])[0]
     
     ''' generate stored memory for whole sequence '''
@@ -44,56 +43,61 @@ class OneSeqBeam():
     
     _, all_mems = tf.while_loop(mem_gen_cond, mem_gen_body, [tf.constant(0, int_type), *mems], parallel_iterations=1)
     
-    def osb_cond(i, i_len, *_):
-      return tf.less(i, i_len)
+    def osb_cond(i, *_):
+      return tf.logical_and(tf.less(i, seq_len), tf.greater(part_seq_skip[i], tf.constant(0, int_type)))
   
-    def osb_body(i, i_len, skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count):
-      o_skt_start = skt_token_split[i][0]
-      o_skt_end = skt_token_split[i][1]
-      o_token_end = skt_token_split[i][2]
+    # skt_each_acc, skt_whole_acc, skt_count, 
+    def osb_body(i, token_each_acc, token_whole_acc, token_count):
+#       o_skt_start = skt_token_split[i][0]
+#       o_skt_end = skt_token_split[i][1]
+#       o_token_end = skt_token_split[i][2]
       
-      skt_last_before = o_skt_start - 1
-      skt_last_before_valid = tf.cast(tf.greater_equal(skt_last_before, 0), int_type)
-      skt_real_last_before = tf.stack([last_token_before_whole_seq, skt_last_before])[skt_last_before_valid]
-      skt_part_seq = tf.slice(whole_seq, [o_skt_start, 0], [o_skt_end-o_skt_start+1, -1])
+#       skt_last_before = o_skt_start - 1
+#       skt_last_before_valid = tf.cast(tf.greater_equal(skt_last_before, 0), int_type)
+#       skt_real_last_before = tf.stack([last_token_before_whole_seq, skt_last_before])[skt_last_before_valid]
+#       skt_part_seq = tf.slice(whole_seq, [o_skt_start, 0], [o_skt_end-o_skt_start+1, -1])
+#       
+#       skt_mems_end = origin_mems_len + skt_last_before
+#       skt_mems_start = tf.maximum(skt_mems_end - oracle_predict_mem_len, 0)
+#       skt_mems_before_last = []
+#       for i in range(n_layer):
+#         skt_mems_before_last.append(tf.slice(all_mems, [skt_mems_start, 0, 0], [skt_mems_end-skt_mems_start+1, -1, -1]))
+#       skt_f_each_acc, skt_f_whole_acc, skt_f_count = self.infer_and_compute_accuracy(skt_mems_before_last, skt_real_last_before, skt_part_seq, beam_mode)
+#       skt_each_acc += skt_f_each_acc
+#       skt_whole_acc += skt_f_whole_acc
+#       skt_count += skt_f_count
       
-      skt_mems_end = origin_mems_len + skt_last_before
-      skt_mems_start = tf.maximum(skt_mems_end - oracle_predict_mem_len, 0)
-      skt_mems_before_last = []
-      for i in range(n_layer):
-        skt_mems_before_last.append(tf.slice(all_mems, [skt_mems_start, 0, 0], [skt_mems_end-skt_mems_start+1, -1, -1]))
-      skt_f_each_acc, skt_f_whole_acc, skt_f_count = self.infer_and_compute_accuracy(skt_mems_before_last, skt_real_last_before, skt_part_seq, beam_mode)
-      skt_each_acc += skt_f_each_acc
-      skt_whole_acc += skt_f_whole_acc
-      skt_count += skt_f_count
+      token_last_before = i-1
+#       token_last_before_valid = tf.cast(tf.greater_equal(token_last_before, 0), int_type)
+#       token_real_last_before = tf.stack([last_token_before_whole_seq, token_last_before])[token_last_before_valid]
+      token_part_seq = tf.slice(whole_seq, [i, 0], [part_seq_skip[i], -1])
       
-      token_last_before = o_skt_end
-      token_real_last_before = token_last_before
-      token_part_seq = tf.slice(whole_seq, [o_skt_end+1, 0], [o_token_end-o_skt_end, -1])
-      
-      token_mems_end = origin_mems_len + token_last_before
-      token_mems_start = tf.maximum(token_mems_end - oracle_predict_mem_len, 0)
+      token_mems_end = origin_mems_len + token_last_before - 1
+      token_mems_start = tf.maximum(token_mems_end - oracle_test_mem_len, 0)
       token_mems_before_last = []
       for i in range(n_layer):
         token_mems_before_last.append(tf.slice(all_mems, [token_mems_start, 0, 0], [token_mems_end-token_mems_start+1, -1, -1]))
-      token_f_each_acc, token_f_whole_acc, token_f_count = self.infer_and_compute_accuracy(token_mems_before_last, token_real_last_before, token_part_seq, beam_mode)
+      token_f_each_acc, token_f_whole_acc, token_f_count = self.infer_and_compute_accuracy(token_mems_before_last, token_last_before, token_part_seq, decode_mode)
       token_each_acc += token_f_each_acc
       token_whole_acc += token_f_whole_acc
       token_count += token_f_count
       
-      return i+1, i_len, skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count
+      # skt_each_acc, skt_whole_acc, skt_count, 
+      return i+part_seq_skip[i], token_each_acc, token_whole_acc, token_count
     
-    i = tf.constant(0, int_type)
-    i_len = tf.constant(tf.shape(skt_token_split)[0], int_type)
-    skt_each_acc, skt_whole_acc, skt_count = tf.constant(0, float_type), tf.constant(0, float_type), tf.constant(0, int_type)
+    i = tf.constant(1, int_type)
+#     skt_each_acc, skt_whole_acc, skt_count = tf.constant(0, float_type), tf.constant(0, float_type), tf.constant(0, int_type)
     token_each_acc, token_whole_acc, token_count = tf.constant(0, float_type), tf.constant(0, float_type), tf.constant(0, int_type)
-    _, _, skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count = tf.while_loop(osb_cond, osb_body, [i, i_len, skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count], parallel_iterations=1)
-    return skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count
+    # skt_each_acc, skt_whole_acc, skt_count, 
+    # i_len, skt_each_acc, skt_whole_acc, skt_count, 
+    _, token_each_acc, token_whole_acc, token_count = tf.while_loop(osb_cond, osb_body, [i, token_each_acc, token_whole_acc, token_count], parallel_iterations=1)
+    # skt_each_acc, skt_whole_acc, skt_count, 
+    return token_each_acc, token_whole_acc, token_count, all_mems
   
-  def infer_and_compute_accuracy(self, mems_before_last, last_token_before_part_seq, part_seq, beam_mode):
-    if beam_mode == standard_beam:
+  def infer_and_compute_accuracy(self, mems_before_last, last_token_before_part_seq, part_seq, decode_mode):
+    if decode_mode == standard_infer_test:
       inferred_ens = self.infer(mems_before_last, last_token_before_part_seq, tf.shape(part_seq)[0])
-    elif beam_mode == multi_infer:
+    elif decode_mode == multi_infer_test:
       inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, tf.shape(part_seq)[0])
     else:
       assert False

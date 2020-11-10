@@ -2,7 +2,7 @@
 
 oracle_tgt_len = 128
 oracle_mem_len = 128
-oracle_predict_mem_len = 128
+oracle_test_mem_len = 128
 
 n_token = -1
 n_layer = 3
