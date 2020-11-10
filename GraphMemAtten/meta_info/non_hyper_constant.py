@@ -3,9 +3,10 @@ import tensorflow as tf
 
 gradient_clip_abs_range = 1000.0
 
-no_beam = 0
-standard_beam = 1
-multi_infer = 2
+standard_infer_train = 1
+multi_infer_train = 2
+standard_infer_test = 3
+multi_infer_test = 4
 
 bool_type = tf.bool
 float_type = tf.float32

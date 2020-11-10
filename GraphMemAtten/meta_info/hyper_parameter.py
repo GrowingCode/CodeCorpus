@@ -22,6 +22,8 @@ accuracy_based_on_whole = 1
 
 initial_memory_trainable = 0
 
+compute_beam = 0
+
 ''' TODO: initialize n_token '''
 
 
