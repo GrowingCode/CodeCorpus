@@ -1,6 +1,12 @@
 import tensorflow as tf
 
 
+gradient_clip_abs_range = 1000.0
+
+no_beam = 0
+standard_beam = 1
+multi_infer = 2
+
 bool_type = tf.bool
 float_type = tf.float32
 int_type = tf.int32

@@ -2,9 +2,10 @@ import tensorflow as tf
 from utils.batch_gather_util import batch_gather
 
 
-class MultiDecodeModel():
+class MultiDecodeModel(tf.keras.Model):
   
   def __init__(self, transformer_model, multi_position_transfer):
+    super(MultiDecodeModel, self).__init__()
     self.transformer_model = transformer_model
     self.multi_position_transfer = multi_position_transfer
   

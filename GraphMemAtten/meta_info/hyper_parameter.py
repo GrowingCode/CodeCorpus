@@ -1,7 +1,5 @@
 
 
-accuracy_based_on_whole = 1
-
 oracle_tgt_len = 128
 oracle_mem_len = 128
 oracle_predict_mem_len = 128
@@ -20,10 +18,9 @@ multi_infer_num = 10
 
 untie_r = 0
 
-no_beam = 0
-standard_beam = 1
-multi_infer = 2
-beam_mode = standard_beam
+accuracy_based_on_whole = 1
+
+initial_memory_trainable = 0
 
 ''' TODO: initialize n_token '''
 

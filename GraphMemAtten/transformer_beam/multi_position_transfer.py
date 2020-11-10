@@ -3,9 +3,10 @@ from utils.initialize_util import random_uniform_variable_initializer
 from meta_info.hyper_parameter import multi_infer_num, d_embed
 
 
-class MultiPositionTransfer():
+class MultiPositionTransfer(tf.keras.Model):
   
   def __init__(self):
+    super(MultiPositionTransfer, self).__init__()
     self.multi_transfer_parameters = tf.Variable(random_uniform_variable_initializer(258, 578, [multi_infer_num, d_embed, d_embed]))
     
   def transfer(self, positions, outputs):

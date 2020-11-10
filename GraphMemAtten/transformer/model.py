@@ -53,7 +53,7 @@ def _cache_mem(curr_out, prev_mem, mem_len=None):
   return tf.stop_gradient(new_mem)
 
 
-class Transformer():
+class Transformer(tf.keras.Model):
   
   def __init__(self):
     self.vocab_lookup_table = tf.Variable(random_normal_variable_initializer([n_token, d_embed]))
