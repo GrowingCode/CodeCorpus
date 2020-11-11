@@ -3,6 +3,8 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
+from inputs.read_tfxl_data import generate_parsed_dataset
+from meta_info.non_hyper_constant import test_tfxl_tfrecord, train_tfxl_tfrecord
 
 
 class ModelRunner():
@@ -12,17 +14,12 @@ class ModelRunner():
     load training data
     '''
 #     data_dir + "/" + "tree_train_data.txt", 
-    self.train_np_arrays = load_examples("train", self.example_loader)
+    self.train_ds = generate_parsed_dataset(train_tfxl_tfrecord)
     '''
     load test data
     '''
 #     data_dir + "/" + "tree_test_data.txt", 
-    self.test_np_arrays = load_examples("test", self.example_loader)
-    '''
-    load type content data
-    '''
-    self.type_content_data = {}
-    load_type_content_data(self.type_content_data)
+    self.test_ds = generate_parsed_dataset(test_tfxl_tfrecord)
     '''
     initialize the directory to put the stored model
     '''

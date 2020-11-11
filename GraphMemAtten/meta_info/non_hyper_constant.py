@@ -1,4 +1,5 @@
 import tensorflow as tf
+import os
 
 
 gradient_clip_abs_range = 1000.0
@@ -34,5 +35,19 @@ mrr_max = 10
 top_ks_tensors = []
 for i in range(len(top_ks)):
   top_ks_tensors.append(tf.concat([tf.ones([top_ks[i]]), tf.zeros([top_ks[-1]-top_ks[i]])], axis=0))
+
+
+home_dir = os.path.expanduser('~')
+data_dir = home_dir + "/" + "AST_Tensors"
+meta_dir = home_dir + "/" + "AST_Metas"
+
+train_tfxl_tfrecord = data_dir + "/" + "train_tfxl.tfrecord"
+test_tfxl_tfrecord = data_dir + "/" + "test_tfxl.tfrecord"
+
+
+
+
+
+
 
 
