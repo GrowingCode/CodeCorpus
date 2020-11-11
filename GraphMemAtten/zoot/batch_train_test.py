@@ -41,6 +41,7 @@ class BatchTrainTest(tf.keras.Model):
     seq_len = np.shape(ori_sequence)[0]
     batch_size = np.shape(ori_sequence)[1]
     
+    batch_token_loss = tf.constant(0, float_type)
     batch_token_accuracy = [tf.constant(0, float_type) for _ in range(len(top_ks))]
     batch_token_count = tf.constant(0, float_type)
     
@@ -71,6 +72,7 @@ class BatchTrainTest(tf.keras.Model):
       mems = new_mems
       i = i_end
       
+      batch_token_loss += loss
       if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
         with tf.GradientTape() as tape:
           grads = tape.gradient(loss, self.trainable_variables)
@@ -83,7 +85,7 @@ class BatchTrainTest(tf.keras.Model):
         batch_token_count += token_count
       else:
         assert False
-    return batch_token_accuracy, batch_token_count
+    return batch_token_loss, batch_token_accuracy, batch_token_count
   
   def batch_test_beam(self, origin_sequence, seq_part_skip, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''
