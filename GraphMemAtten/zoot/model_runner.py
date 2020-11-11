@@ -297,17 +297,6 @@ class ModelRunner():
     return metrics
 
 
-def load_examples(mode_info, example_loader):
-  start_time = time.time()
-  end_time = time.time()
-  print("reading " + mode_info + " raw data using " + str(end_time-start_time) +"s")
-  start_time = time.time()
-  examples = example_loader(mode_info)
-  end_time = time.time()
-  print("pre_processing " + mode_info + " raw data using " + str(end_time-start_time) +"s")
-  return examples
-
-
 def merge_metric(all_metrics, part_metric):
   ''' assert two structures are same '''
   all_metrics_is_empty = True
@@ -406,13 +395,4 @@ def model_output(tensors, tensors_meta):
   return numpy_dict
   
   
-def clip_gradients(grads, vs):
-  final_grads = []
-  for (gv, v) in zip(grads, vs):
-    if gv is not None:
-      grad = tf.clip_by_value(gv, -gradient_clip_abs_range, gradient_clip_abs_range)
-      final_grads.append((grad, v))
-  return final_grads
-
-
 
