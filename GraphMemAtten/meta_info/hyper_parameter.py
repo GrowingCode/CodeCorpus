@@ -15,6 +15,7 @@ dropout = 0.1
 dropatt = 0.0
 learning_rate=0.00025
 multi_infer_num = 10
+batch_size = 10
 
 untie_r = 0
 

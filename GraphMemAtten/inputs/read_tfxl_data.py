@@ -16,10 +16,14 @@ def parse_function(example_proto):
           }
   
   parsed_example = tf.io.parse_single_example(example_proto, dics)
-  parsed_example['origin_sequence'] = tf.sparse.to_dense(parsed_example['origin_sequence'])
-  parsed_example['relative_to_part_first'] = tf.sparse.to_dense(parsed_example['relative_to_part_first'])
-  parsed_example['valid_mask'] = tf.sparse.to_dense(parsed_example['valid_mask'])
-  parsed_example['seq_part_skip'] = tf.sparse.to_dense(parsed_example['seq_part_skip'])
+  parsed_example['origin_sequence'] = tf.io.decode_raw(parsed_example['origin_sequence'], int_type)
+  parsed_example['origin_sequence_shape'] = tf.io.decode_raw(parsed_example['origin_sequence_shape'], int_type)
+  parsed_example['relative_to_part_first'] = tf.io.decode_raw(parsed_example['relative_to_part_first'], int_type)
+  parsed_example['relative_to_part_first_shape'] = tf.io.decode_raw(parsed_example['relative_to_part_first_shape'], int_type)
+  parsed_example['valid_mask'] = tf.io.decode_raw(parsed_example['valid_mask'], int_type)
+  parsed_example['valid_mask_shape'] = tf.io.decode_raw(parsed_example['valid_mask_shape'], int_type)
+  parsed_example['seq_part_skip'] = tf.io.decode_raw(parsed_example['seq_part_skip'], int_type)
+  parsed_example['seq_part_skip_shape'] = tf.io.decode_raw(parsed_example['seq_part_skip_shape'], int_type)
   
   parsed_example['origin_sequence'] = tf.reshape(parsed_example['origin_sequence'], parsed_example['origin_sequence_shape'])
   parsed_example['relative_to_part_first'] = tf.reshape(parsed_example['relative_to_part_first'], parsed_example['relative_to_part_first_shape'])
