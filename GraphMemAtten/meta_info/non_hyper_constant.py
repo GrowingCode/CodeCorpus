@@ -3,6 +3,9 @@ import numpy as np
 import os
 
 
+standard_infer = "standard_infer"
+multi_infer = "multi_infer"
+
 gradient_clip_abs_range = 1000.0
 
 standard_infer_train = 1
@@ -46,9 +49,6 @@ home_dir = os.path.expanduser('~')
 data_dir = home_dir + "/" + "AST_Tensors"
 meta_dir = home_dir + "/" + "AST_Metas"
 
-train_tfxl_tfrecord = data_dir + "/" + "train_tfxl.tfrecord"
-test_tfxl_tfrecord = data_dir + "/" + "test_tfxl.tfrecord"
-
 model_storage_parent_dir = 'zoot'
 model_storage_dir = "zoot_run_info_record"
 model_config = "model_config.txt"
@@ -66,7 +66,6 @@ ignore_restrain_count = 0
 restrain_maximum_count = 10
 max_train_epoch = 200
 valid_epoch_period = 1
-
 
 
 

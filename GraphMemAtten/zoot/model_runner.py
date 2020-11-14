@@ -1,22 +1,24 @@
 import json
 import os
 import time
+
+from inputs.read_tfxl_data import generate_parsed_dataset
+from meta_info.hyper_parameter import run_decode_info, compute_beam
+from meta_info.non_hyper_constant import model_storage_dir, model_storage_parent_dir, meta_dir, turn_info, \
+  model_check_point, turn_txt, best_info, best_txt, model_best, model_config, \
+  restrain_maximum_count, max_train_epoch, standard_infer_train, \
+  standard_infer_test, multi_infer_test, multi_infer_train, valid_epoch_period, \
+  top_ks, np_float_type, standard_infer, multi_infer, data_dir
 import numpy as np
 import tensorflow as tf
-from inputs.read_tfxl_data import generate_parsed_dataset
-from meta_info.non_hyper_constant import test_tfxl_tfrecord, train_tfxl_tfrecord,\
-  model_storage_dir, model_storage_parent_dir, meta_dir, turn_info,\
-  model_check_point, turn_txt, best_info, best_txt, model_best, model_config,\
-  restrain_maximum_count, max_train_epoch, standard_infer_train,\
-  standard_infer_test, multi_infer_test, multi_infer_train, valid_epoch_period,\
-  top_ks, np_float_type
 from utils.file_util import copy_files_from_one_directory_to_another_directory
 from zoot.batch_train_test import BatchTrainTest
+from inputs.write_tfxl_data import generate_tfxl_record
 
 
 class ModelRunner():
   
-  def __init__(self, sess):
+  def __init__(self):
     '''
     load training data
     '''
@@ -81,10 +83,10 @@ class ModelRunner():
   
   def train_and_test(self, decode_info):
     
-    if decode_info == "standard_infer":
+    if decode_info == standard_infer:
       train_mode = standard_infer_train
       test_mode = standard_infer_test
-    elif decode_info == "multi_infer":
+    elif decode_info == multi_infer:
       train_mode = multi_infer_train
       test_mode = multi_infer_test
     else:
@@ -231,9 +233,9 @@ class ModelRunner():
   
   def test_beam(self, decode_info):
     
-    if decode_info == "standard_infer":
+    if decode_info == standard_infer:
       test_mode = standard_infer_test
-    elif decode_info == "multi_infer":
+    elif decode_info == multi_infer:
       test_mode = multi_infer_test
     else:
       assert False
@@ -433,5 +435,30 @@ def info_of_train_stop_test_start(average_accuracy):
 #     numpy_dict[tensors_meta[i][0]] = t
 #   return numpy_dict
   
+
+if __name__ == '__main__':
+  origin_train_file = data_dir + "/" + "tfxl_" + run_decode_info + "_train_data.txt"
+  train_tfxl_tfrecord = data_dir + "/" + run_decode_info + "_train_tfxl.tfrecord"
+  origin_test_file = data_dir + "/" + "tfxl_" + run_decode_info + "_test_data.txt"
+  test_tfxl_tfrecord = data_dir + "/" + run_decode_info + "_test_tfxl.tfrecord"
+  
+  if not os.path.exists(train_tfxl_tfrecord):
+    generate_tfxl_record(origin_train_file, train_tfxl_tfrecord)
+    
+  if not os.path.exists(test_tfxl_tfrecord):
+    generate_tfxl_record(origin_test_file, test_tfxl_tfrecord)
+  
+  mr = ModelRunner()
+  mr.train_and_test(run_decode_info)
+  if compute_beam:
+    mr.test_beam(run_decode_info)
+
+
+
+
+
+
+
+
   
 

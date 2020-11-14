@@ -1,3 +1,4 @@
+from meta_info.non_hyper_constant import standard_infer
 
 
 oracle_tgt_len = 128
@@ -24,6 +25,8 @@ accuracy_based_on_whole = 1
 initial_memory_trainable = 0
 
 compute_beam = 0
+run_decode_info = standard_infer
+
 
 ''' TODO: initialize n_token '''
 

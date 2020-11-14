@@ -1,19 +1,19 @@
 import tensorflow as tf
 import numpy as np
-from meta_info.non_hyper_constant import data_dir, np_int_type
+from meta_info.non_hyper_constant import np_int_type
 from meta_info.hyper_parameter import batch_size
 from builtins import len
 
 
-def generate_tfxl_record(mode, record_filename):
+def generate_tfxl_record(origin_filepath, record_filepath):
   
-  writer = tf.io.TFRecordWriter(record_filename)
+  writer = tf.io.TFRecordWriter(record_filepath)
   
   ''' the examples must have been sorted! '''
   examples = []
   example_max_ele_size = 0
   
-  for line in open(data_dir + "/" + "tfxl_" + mode + "_data.txt", 'r'):
+  for line in open(origin_filepath, 'r'):
     one_example = line.strip()
     origin_sequence, relative_to_part_first, valid_mask, seq_part_skip = one_example.split("#")
     int_origin_sequence = [int(id_str) for id_str in origin_sequence.split()]
