@@ -6,6 +6,10 @@ import os
 standard_infer = "standard_infer"
 multi_infer = "multi_infer"
 
+skeleton_one = "one"
+skeleton_pe = "pe"
+skeleton_e = "e"
+
 gradient_clip_abs_range = 1000.0
 
 standard_infer_train = 1

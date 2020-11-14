@@ -1,4 +1,6 @@
-from meta_info.non_hyper_constant import standard_infer
+from meta_info.non_hyper_constant import standard_infer, data_dir, skeleton_pe,\
+  skeleton_one, skeleton_e
+import json
 
 
 oracle_tgt_len = 128
@@ -26,8 +28,23 @@ initial_memory_trainable = 0
 
 compute_beam = 0
 run_decode_info = standard_infer
+skeleton_mode = skeleton_pe
 
 
 ''' TODO: initialize n_token '''
+all_token_summary_file = open(data_dir + "/All_token_summary.json", 'r', encoding='UTF-8')
+all_token_summary_ts = json.load(all_token_summary_file)
+all_token_summary_file.close()
+if skeleton_mode == skeleton_one:
+  n_token = 5 + all_token_summary_ts["SkeletonHitNum"] + all_token_summary_ts["TokenHitNum"]
+elif skeleton_mode == skeleton_pe:
+  n_token = 5 + all_token_summary_ts["SkeletonPEHitNum"] + all_token_summary_ts["TokenHitNum"]
+elif skeleton_mode == skeleton_e:
+  n_token = 5 + all_token_summary_ts["SkeletonEachHitNum"] + all_token_summary_ts["TokenHitNum"]
+else:
+  assert False
+
+
+
 
 
