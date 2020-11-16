@@ -438,10 +438,10 @@ def info_of_train_stop_test_start(average_accuracy):
   
 
 if __name__ == '__main__':
-  origin_train_file = data_dir + "/" + skeleton_mode + "_" + run_decode_info + "_train_data.txt"
-  train_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_" + run_decode_info + "_train_tfxl.tfrecord"
-  origin_test_file = data_dir + "/" + skeleton_mode + "_" + run_decode_info + "_test_data.txt"
-  test_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_" + run_decode_info + "_test_tfxl.tfrecord"
+  origin_train_file = data_dir + "/" + skeleton_mode + "_train_data.txt"
+  train_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_train_tfxl.tfrecord"
+  origin_test_file = data_dir + "/" + skeleton_mode + "_test_data.txt"
+  test_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_test_tfxl.tfrecord"
   
   if not os.path.exists(train_tfxl_tfrecord):
     generate_tfxl_record(origin_train_file, train_tfxl_tfrecord)

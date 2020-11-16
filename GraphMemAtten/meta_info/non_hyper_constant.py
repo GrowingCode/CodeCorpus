@@ -6,9 +6,9 @@ import os
 standard_infer = "standard_infer"
 multi_infer = "multi_infer"
 
-skeleton_one = "one"
-skeleton_pe = "pe"
-skeleton_e = "e"
+skeleton_one = "skt_one"
+skeleton_pe = "skt_pe"
+skeleton_e = "skt_e"
 
 gradient_clip_abs_range = 1000.0
 
