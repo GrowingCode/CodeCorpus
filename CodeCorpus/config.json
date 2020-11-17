@@ -1,5 +1,5 @@
 {
-    "witness" : ["000066#lucene-core-common#dataset"],
+    "witness" : ["example-master"],
     "data" : ["simple"],
     "preprocess" : ["log4j-trunk.zip"]
 }
