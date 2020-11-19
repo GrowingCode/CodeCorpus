@@ -4,7 +4,8 @@ import time
 
 from inputs.read_tfxl_data import generate_parsed_dataset
 from meta_info.hyper_parameter import run_decode_info, compute_beam,\
-  skeleton_mode
+  skeleton_mode, train_tfxl_tfrecord, origin_train_file, test_tfxl_tfrecord,\
+  origin_test_file
 from meta_info.non_hyper_constant import model_storage_dir, model_storage_parent_dir, meta_dir, turn_info, \
   model_check_point, turn_txt, best_info, best_txt, model_best, model_config, \
   restrain_maximum_count, max_train_epoch, standard_infer_train, \
@@ -438,11 +439,6 @@ def info_of_train_stop_test_start(average_accuracy):
   
 
 if __name__ == '__main__':
-  origin_train_file = data_dir + "/" + skeleton_mode + "_train_data.txt"
-  train_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_train_tfxl.tfrecord"
-  origin_test_file = data_dir + "/" + skeleton_mode + "_test_data.txt"
-  test_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_test_tfxl.tfrecord"
-  
   if not os.path.exists(train_tfxl_tfrecord):
     generate_tfxl_record(origin_train_file, train_tfxl_tfrecord)
     

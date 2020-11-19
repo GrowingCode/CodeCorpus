@@ -30,17 +30,21 @@ compute_beam = 0
 run_decode_info = standard_infer
 skeleton_mode = skeleton_pe
 
+origin_train_file = data_dir + "/" + skeleton_mode + "_train_data.txt"
+train_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_train_tfxl.tfrecord"
+origin_test_file = data_dir + "/" + skeleton_mode + "_test_data.txt"
+test_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_test_tfxl.tfrecord"
 
 ''' TODO: initialize n_token '''
 all_token_summary_file = open(data_dir + "/All_token_summary.json", 'r', encoding='UTF-8')
 all_token_summary_ts = json.load(all_token_summary_file)
 all_token_summary_file.close()
 if skeleton_mode == skeleton_one:
-  n_token = 5 + all_token_summary_ts["SkeletonHitNum"] + all_token_summary_ts["TokenHitNum"]
+  n_token = 6 + all_token_summary_ts["SkeletonHitNum"] + all_token_summary_ts["TokenHitNum"]
 elif skeleton_mode == skeleton_pe:
-  n_token = 5 + all_token_summary_ts["SkeletonPEHitNum"] + all_token_summary_ts["TokenHitNum"]
+  n_token = 6 + all_token_summary_ts["SkeletonPEHitNum"] + all_token_summary_ts["TokenHitNum"]
 elif skeleton_mode == skeleton_e:
-  n_token = 5 + all_token_summary_ts["SkeletonEachHitNum"] + all_token_summary_ts["TokenHitNum"]
+  n_token = 6 + all_token_summary_ts["SkeletonEachHitNum"] + all_token_summary_ts["TokenHitNum"]
 else:
   assert False
 

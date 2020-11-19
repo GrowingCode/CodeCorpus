@@ -1,7 +1,9 @@
 import tensorflow as tf
+import os
 import numpy as np
 from meta_info.non_hyper_constant import np_int_type
-from meta_info.hyper_parameter import batch_size
+from meta_info.hyper_parameter import batch_size, train_tfxl_tfrecord,\
+  origin_train_file, test_tfxl_tfrecord, origin_test_file
 from builtins import len
 
 
@@ -73,6 +75,15 @@ def handle_examples(examples, example_max_ele_size, writer):
   tf_serialized = tf_example.SerializeToString()
   writer.write(tf_serialized)
   
+  
+if __name__ == '__main__':
+  if not os.path.exists(train_tfxl_tfrecord):
+    generate_tfxl_record(origin_train_file, train_tfxl_tfrecord)
+    
+  if not os.path.exists(test_tfxl_tfrecord):
+    generate_tfxl_record(origin_test_file, test_tfxl_tfrecord)
+  
+
   
   
   
