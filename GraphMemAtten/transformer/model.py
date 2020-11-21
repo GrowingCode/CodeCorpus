@@ -56,6 +56,7 @@ def _cache_mem(curr_out, prev_mem, mem_len=None):
 class Transformer(tf.keras.Model):
   
   def __init__(self):
+    super(Transformer, self).__init__()
     self.vocab_lookup_table = tf.Variable(random_normal_variable_initializer([n_token, d_embed]))
     self.proj_w = None
     if d_model != d_embed:
@@ -210,7 +211,7 @@ class Transformer(tf.keras.Model):
     probs, predictions, loss = self.mask_adaptive_logsoftmax(
         hidden=output,
         target=target,
-        valid_mask,
+        valid_mask=valid_mask,
         compute_prediction=(is_training <= 0))
     
     return output, probs, predictions, loss, new_mems

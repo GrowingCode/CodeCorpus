@@ -4,15 +4,14 @@ import time
 
 from inputs.read_tfxl_data import generate_parsed_dataset
 from meta_info.hyper_parameter import run_decode_info, compute_beam,\
-  skeleton_mode, train_tfxl_tfrecord, origin_train_file, test_tfxl_tfrecord,\
+  train_tfxl_tfrecord, origin_train_file, test_tfxl_tfrecord,\
   origin_test_file
 from meta_info.non_hyper_constant import model_storage_dir, model_storage_parent_dir, meta_dir, turn_info, \
-  model_check_point, turn_txt, best_info, best_txt, model_best, model_config, \
+  model_check_point, turn_summary, best_info, best_summary, model_best, model_config, \
   restrain_maximum_count, max_train_epoch, standard_infer_train, \
   standard_infer_test, multi_infer_test, multi_infer_train, valid_epoch_period, \
-  top_ks, np_float_type, standard_infer, multi_infer, data_dir
+  top_ks, np_float_type, standard_infer, multi_infer
 import numpy as np
-import tensorflow as tf
 from utils.file_util import copy_files_from_one_directory_to_another_directory
 from zoot.batch_train_test import BatchTrainTest
 from inputs.write_tfxl_data import generate_tfxl_record
@@ -95,13 +94,13 @@ class ModelRunner():
       assert False
       
     turn_info_txt = self.real_model_storage_dir + '/' + decode_info + "_" + turn_info
-    turn_txt = self.real_model_storage_dir + '/' + decode_info + "_" + turn_txt
+    turn_txt = self.real_model_storage_dir + '/' + decode_info + "_" + turn_summary
     check_point_directory = self.real_model_storage_dir + '/' + decode_info + "_" + model_check_point
     check_point_file = check_point_directory + '/' + decode_info + "_" + 'model_weights'
     best_info_txt = self.real_model_storage_dir + '/' + decode_info + "_" + best_info
-    best_txt = self.real_model_storage_dir + '/' + decode_info + "_" + best_txt
+#     best_txt = self.real_model_storage_dir + '/' + decode_info + "_" + best_summary
     best_model_directory = self.real_model_storage_dir + '/' + decode_info + "_" + model_best
-    best_model_file = best_model_directory + '/' + decode_info + _ + 'model_weights'
+    best_model_file = best_model_directory + '/' + decode_info + "_" + 'model_weights'
     
     turn = 0
     min_loss = None
@@ -243,7 +242,7 @@ class ModelRunner():
       assert False
     
 #     best_info_txt = self.real_model_storage_dir + '/' + decode_info + "_" + best_info
-    best_txt = self.real_model_storage_dir + '/' + decode_info + "_" + best_txt
+    best_txt = self.real_model_storage_dir + '/' + decode_info + "_" + best_summary
     best_model_directory = self.real_model_storage_dir + '/' + decode_info + "_" + model_best
     best_model_file = best_model_directory + '/' + decode_info + _ + 'model_weights'
     
@@ -280,48 +279,50 @@ class ModelRunner():
     print(dict_to_string(avg))
   
   
-def model_running(self, model, ds, decode_mode):
+def model_running(model, ds, decode_mode):
   all_token_accuracy = 0
   all_token_count = 0
   all_token_loss = 0
-  iterator = ds.make_one_shot_iterator()
-  next_element = iterator.get_next()
+#   iterator = ds.make_one_shot_iterator()
+#   next_element = iterator.get_next()
   start_time = time.time()
   i = 1
-  while True:
-    try:
-      batch_token_loss, batch_token_accuracy, batch_token_count = model.batch_train_test(next_element['origin_sequence'], next_element['relative_to_part_first'], next_element['valid_mask'], decode_mode)
-      all_token_loss += batch_token_loss
-      all_token_accuracy += batch_token_accuracy
-      all_token_count += batch_token_count
-    except tf.errors.OutOfRangeError:
-      break
-    else:
-      assert False
+#   while True:
+#     try:
+  for next_element in ds:
+    batch_token_loss, batch_token_accuracy, batch_token_count = model.batch_train_test(next_element['origin_sequence'], next_element['relative_to_part_first'], next_element['valid_mask'], decode_mode)
+    all_token_loss += batch_token_loss
+    all_token_accuracy += batch_token_accuracy
+    all_token_count += batch_token_count
+#     except tf.errors.OutOfRangeError:
+#       break
+#     else:
+#       assert False
     i+=1
   end_time = time.time()
-  print("mode:" + decode_mode + "#batch_size:" + str(i) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
+  print("mode:" + str(decode_mode) + "#batch_size:" + str(i) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
   return {'token_loss':all_token_loss, 'token_accuracy':all_token_accuracy, 'token_count':all_token_count}
   
   
-def beam_model_running(self, model, ds, decode_mode):
+def beam_model_running(model, ds, decode_mode):
   all_token_each_acc = 0
   all_token_whole_accuracy = 0
   all_token_count = 0
-  iterator = ds.make_one_shot_iterator()
-  next_element = iterator.get_next()
+#   iterator = ds.make_one_shot_iterator()
+#   next_element = iterator.get_next()
   start_time = time.time()
   i = 1
-  while True:
-    try:
-      batch_token_each_acc, batch_token_whole_acc, batch_token_count = model.batch_test_beam(next_element['origin_sequence'], next_element['seq_part_skip'], decode_mode)
-      all_token_each_acc += batch_token_each_acc
-      all_token_whole_accuracy += batch_token_whole_acc
-      all_token_count += batch_token_count
-    except tf.errors.OutOfRangeError:
-      break
-    else:
-      assert False
+#   while True:
+#     try:
+  for next_element in ds:
+    batch_token_each_acc, batch_token_whole_acc, batch_token_count = model.batch_test_beam(next_element['origin_sequence'], next_element['seq_part_skip'], decode_mode)
+    all_token_each_acc += batch_token_each_acc
+    all_token_whole_accuracy += batch_token_whole_acc
+    all_token_count += batch_token_count
+#     except tf.errors.OutOfRangeError:
+#       break
+#     else:
+#       assert False
     i+=1
   end_time = time.time()
   print("mode:" + decode_mode + "#batch_size:" + str(i) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")

@@ -61,14 +61,14 @@ def handle_examples(examples, example_max_ele_size, writer):
     np_batch_seq_part_skip = np.concatenate([np_batch_seq_part_skip, np.expand_dims(pad_vector_to_specified_length(example[3], example_max_ele_size), axis=0)], axis=0)
     
   features={}
-  features['origin_sequence'] = tf.train.Feature(int64_list=tf.train.BytesList(np_batch_origin_sequence.reshape(-1)))
-  features['origin_sequence_shape'] = tf.train.Feature(float_list = tf.train.BytesList(np.shape(np_batch_origin_sequence)))
-  features['relative_to_part_first'] = tf.train.Feature(int64_list = tf.train.BytesList(value=np_batch_relative_to_part_first.reshape(-1)))
-  features['relative_to_part_first_shape'] = tf.train.Feature(float_list = tf.train.BytesList(np.shape(np_batch_relative_to_part_first)))
-  features['valid_mask'] = tf.train.Feature(bytes_list=tf.train.BytesList(value=np_batch_valid_mask.reshape(-1)))
-  features['valid_mask_shape'] = tf.train.Feature(int64_list = tf.train.BytesList(np.shape(np_batch_valid_mask)))
-  features['seq_part_skip'] = tf.train.Feature(bytes_list=tf.train.BytesList(value=np_batch_seq_part_skip.reshape(-1)))
-  features['seq_part_skip_shape'] = tf.train.Feature(int64_list = tf.train.BytesList(np.shape(np_batch_seq_part_skip)))
+  features['origin_sequence'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=np_batch_origin_sequence.reshape(-1).tostring()))
+  features['origin_sequence_shape'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=np.shape(np_batch_origin_sequence).tostring()))
+  features['relative_to_part_first'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=np_batch_relative_to_part_first.reshape(-1).tostring()))
+  features['relative_to_part_first_shape'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=np.shape(np_batch_relative_to_part_first).tostring()))
+  features['valid_mask'] = tf.train.Feature(bytes_list=tf.train.BytesList(value=np_batch_valid_mask.reshape(-1).tostring()))
+  features['valid_mask_shape'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=np.shape(np_batch_valid_mask).tostring()))
+  features['seq_part_skip'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=np_batch_seq_part_skip.reshape(-1).tostring()))
+  features['seq_part_skip_shape'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=np.shape(np_batch_seq_part_skip).tostring()))
   
   tf_features = tf.train.Features(feature = features)
   tf_example = tf.train.Example(features = tf_features)
