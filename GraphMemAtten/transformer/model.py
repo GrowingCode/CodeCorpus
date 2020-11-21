@@ -2,7 +2,8 @@ import tensorflow as tf
 from meta_info.hyper_parameter import d_head, n_head, n_layer,\
   d_embed, d_model, n_token, dropout, d_inner, dropatt, oracle_mem_len,\
   untie_r
-from meta_info.non_hyper_constant import normal_initializer, top_ks
+from meta_info.non_hyper_constant import normal_initializer, top_ks, float_type,\
+  int_type
 from utils.initialize_util import random_normal_variable_initializer,\
   zero_variable_initializer
 
@@ -105,9 +106,16 @@ class Transformer(tf.keras.Model):
     if not compute_prediction:
       nll = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target,
                                                            logits=output)
+      print("n_token:" + str(n_token))
+      target_max = tf.reduce_max(target)
+      print("target_max:" + str(target_max))
+      all_nll_nans = tf.reduce_sum(tf.cast(tf.math.is_nan(nll), int_type))
+      print("all_nll_nans:" + str(all_nll_nans))
+    
+#       print("nll:" + str(nll))
       ''' ['tf.shape(output):', [128 6 27]] '''
       ''' ['tf.shape(nll):', [128 6]] '''
-      nll = nll * valid_mask
+      nll = nll * tf.cast(valid_mask, float_type)
       if return_mean:
         nll = tf.reduce_mean(input_tensor=nll)
       
@@ -116,7 +124,7 @@ class Transformer(tf.keras.Model):
       ''' ['tf.shape(predictions):', [128 6 top_ks[-1]]] '''
       t_probs = tf.math.log(tf.nn.softmax(output, axis=2))
       probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
-    
+      
     return probs, predictions, nll
   
   def transformer(self, dec_inp, target, mems, valid_mask, is_training, 
@@ -148,7 +156,7 @@ class Transformer(tf.keras.Model):
     
     ''' ['qlen:', 128, 'mlen:', 128] '''
     
-#     p_op_dec_inp = tf.print(['same_length:', same_length])
+#     p_op_dec_inp = tf.print(['tf.shape(dec_inp):', tf.shape(dec_inp), 'tf.shape(target):', tf.shape(target)])
 #     p_op_target = tf.print(['tf.shape(r_r_bias):', tf.shape(r_r_bias)])
 #     with tf.control_dependencies([p_op_dec_inp]):
     klen = mlen + qlen

@@ -36,9 +36,13 @@ class BatchTrainTest(tf.keras.Model):
   
   def batch_train_test(self, origin_sequence, relative_to_part_first, valid_mask, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''
+#     print(origin_sequence)
     ori_sequence = origin_sequence[0:-1,:]
+#     print("=== split line ===")
+#     print(ori_sequence)
     tgt_sequence = origin_sequence[1:,:]
     seq_len = np.shape(ori_sequence)[0]
+#     print("seq_len:" + str(seq_len))
     batch_size = np.shape(ori_sequence)[1]
     
     batch_token_loss = tf.constant(0, float_type)
@@ -63,12 +67,7 @@ class BatchTrainTest(tf.keras.Model):
         _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=True)
       else:
         assert False
-
-      standard_infer_train = 1
-      multi_infer_train = 2
-      standard_infer_test = 3
-      multi_infer_test = 4
-
+#       print("loss:" + str(loss))
       mems = new_mems
       i = i_end
       

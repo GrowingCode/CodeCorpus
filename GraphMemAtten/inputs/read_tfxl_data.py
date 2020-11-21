@@ -1,5 +1,6 @@
 import tensorflow as tf
 from meta_info.non_hyper_constant import int_type
+from meta_info.hyper_parameter import train_tfxl_tfrecord
 
 
 def parse_function(example_proto):
@@ -24,7 +25,8 @@ def parse_function(example_proto):
   parsed_example['valid_mask_shape'] = tf.io.decode_raw(parsed_example['valid_mask_shape'], int_type)
   parsed_example['seq_part_skip'] = tf.io.decode_raw(parsed_example['seq_part_skip'], int_type)
   parsed_example['seq_part_skip_shape'] = tf.io.decode_raw(parsed_example['seq_part_skip_shape'], int_type)
-  
+#   print(parsed_example['origin_sequence'])
+#   print(parsed_example['origin_sequence_shape'])
   parsed_example['origin_sequence'] = tf.reshape(parsed_example['origin_sequence'], parsed_example['origin_sequence_shape'])
   parsed_example['relative_to_part_first'] = tf.reshape(parsed_example['relative_to_part_first'], parsed_example['relative_to_part_first_shape'])
   parsed_example['valid_mask'] = tf.reshape(parsed_example['valid_mask'], parsed_example['valid_mask_shape'])
@@ -39,9 +41,10 @@ def generate_parsed_dataset(filename):
   return new_dataset
   
   
-  
-  
-  
+if __name__ == '__main__':
+  ds = generate_parsed_dataset(train_tfxl_tfrecord)
+  for next_element in ds.take(1):
+    print(next_element['origin_sequence'])
   
 
 
