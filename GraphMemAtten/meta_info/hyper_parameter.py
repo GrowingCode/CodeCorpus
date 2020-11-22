@@ -40,13 +40,15 @@ all_token_summary_file = open(data_dir + "/All_token_summary.json", 'r', encodin
 all_token_summary_ts = json.load(all_token_summary_file)
 all_token_summary_file.close()
 if skeleton_mode == skeleton_one:
-  n_token = 6 + all_token_summary_ts["SkeletonHitNum"] + all_token_summary_ts["TokenHitNum"]
+  n_token = 1 + all_token_summary_ts["SkeletonHitNum"] + all_token_summary_ts["SkeletonTokenHitNum"]
 elif skeleton_mode == skeleton_pe:
-  n_token = 6 + all_token_summary_ts["SkeletonPEHitNum"] + all_token_summary_ts["TokenHitNum"]
+  n_token = 1 + all_token_summary_ts["SkeletonPEHitNum"] + all_token_summary_ts["SkeletonTokenHitNum"]
 elif skeleton_mode == skeleton_e:
-  n_token = 6 + all_token_summary_ts["SkeletonEachHitNum"] + all_token_summary_ts["TokenHitNum"]
+  n_token = 1 + all_token_summary_ts["SkeletonEachHitNum"] + all_token_summary_ts["SkeletonTokenHitNum"]
 else:
   assert False
+  
+assert n_token > -1
 
 
 
