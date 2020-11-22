@@ -2,14 +2,13 @@ from meta_info.hyper_parameter import oracle_mem_len, n_layer, d_model, initial_
   compute_beam
 from meta_info.non_hyper_constant import float_type, \
   multi_infer_test, multi_infer_train, standard_infer_test, standard_infer_train, top_ks,\
-  int_type
+  int_type, gradient_clip_abs_range
 import numpy as np
 import tensorflow as tf
 from transformer.model import Transformer
 from transformer_beam.multi_decode_model import MultiDecodeModel
 from transformer_beam.multi_position_transfer import MultiPositionTransfer
 from utils.accuracy_util import compute_batch_top_ks_accuracy
-from utils.gradient_util import clip_gradients
 from utils.initialize_util import random_normal_variable_initializer
 from transformer_beam.one_sequence.one_seq_beam import OneSeqBeam
 
@@ -47,7 +46,7 @@ class BatchTrainTest(tf.keras.Model):
     
     batch_token_loss = tf.constant(0, float_type)
     batch_token_accuracy = [tf.constant(0, float_type) for _ in range(len(top_ks))]
-    batch_token_count = tf.constant(0, float_type)
+    batch_token_count = tf.constant(0, int_type)
     
     all_outputs = tf.tile(self.all_outputs, [1, batch_size, 1])
     
@@ -61,30 +60,44 @@ class BatchTrainTest(tf.keras.Model):
       part_tgt_sequence = tgt_sequence[i:i_end,:]
       part_relative_to_part_first = relative_to_part_first[i:i_end,:]
       part_valid_mask = valid_mask[i:i_end,:]
-      if decode_mode == multi_infer_train or decode_mode == multi_infer_test:
-        _, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, is_training=True)
-      elif decode_mode == standard_infer_train or decode_mode == standard_infer_test:
-        _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=True)
+      if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
+        with tf.GradientTape() as tape:
+          if decode_mode == multi_infer_train:
+            _, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, is_training=True)
+          elif decode_mode == standard_infer_train:
+            _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=True)
+          else:
+            assert False
       else:
-        assert False
+        assert decode_mode == standard_infer_test or decode_mode == multi_infer_test
+        if decode_mode == multi_infer_test:
+          _, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, is_training=False)
+        elif decode_mode == standard_infer_test:
+          _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=False)
+        else:
+          assert False
 #       print("loss:" + str(loss))
       mems = new_mems
       i = i_end
-      
+#       print("== executed! ==" + str(i))
       batch_token_loss += loss
+      token_count = tf.reduce_sum(part_valid_mask)
+      batch_token_count += token_count
       if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
-        with tf.GradientTape() as tape:
-          grads = tape.gradient(loss, self.trainable_variables)
-          grads = clip_gradients(grads)
-          self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
+        grads = tape.gradient(loss, self.trainable_variables)
+#         print(grads)
+        c_grads = [(tf.clip_by_value(grad, -gradient_clip_abs_range, gradient_clip_abs_range)) if grad != None else None for grad in grads]
+#         grads = clip_gradients(grads)
+        nc_grads = [grad if grad is not None else tf.zeros_like(var) for (grad, var) in zip(c_grads, self.trainable_variables)]
+        self.optimizer.apply_gradients(zip(nc_grads, self.trainable_variables))
       elif decode_mode == standard_infer_test or decode_mode == multi_infer_test:
-        token_accuracy, token_count = compute_batch_top_ks_accuracy(predictions, tgt_sequence, valid_mask)
-        temp = [batch_token_accuracy[i]+token_accuracy[i] for i in range(len(top_ks))]
-        batch_token_accuracy = temp
-        batch_token_count += token_count
+        token_accuracy = compute_batch_top_ks_accuracy(predictions, part_tgt_sequence, part_valid_mask)
+        for j in range(len(top_ks)):
+          batch_token_accuracy[j] += token_accuracy[j]
       else:
         assert False
-    return batch_token_loss, batch_token_accuracy, batch_token_count
+    numpy_batch_token_accuracy = [one_token_accuracy.numpy() for one_token_accuracy in batch_token_accuracy]
+    return batch_token_loss.numpy(), numpy_batch_token_accuracy, batch_token_count.numpy()
   
   def batch_test_beam(self, origin_sequence, seq_part_skip, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''

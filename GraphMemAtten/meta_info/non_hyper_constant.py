@@ -46,7 +46,7 @@ mrr_max = 10
 
 top_ks_tensors = []
 for i in range(len(top_ks)):
-  top_ks_tensors.append(tf.concat([tf.ones([top_ks[i]]), tf.zeros([top_ks[-1]-top_ks[i]])], axis=0))
+  top_ks_tensors.append(tf.concat([tf.ones([top_ks[i]], int_type), tf.zeros([top_ks[-1]-top_ks[i]], int_type)], axis=0))
 
 
 home_dir = os.path.expanduser('~')

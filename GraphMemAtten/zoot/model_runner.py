@@ -144,7 +144,9 @@ class ModelRunner():
       total_turn_sum = total_turn_sum + 1.0
       total_turn_average_train_time_cost = total_turn_sum_train_time_cost / total_turn_sum
       ''' exactly record train loss '''
+#       print("train_output_result:" + str(train_output_result))
       train_avg = compute_average(train_output_result)
+#       print("train_avg:" + str(train_avg))
 #       train_noavg = process_noavg(train_output_result)
 #       with open(self.train_noavg_json, 'w') as train_noavg_record:
 #         train_noavg_record.write(json.dumps(train_noavg))
@@ -158,7 +160,9 @@ class ModelRunner():
       '''
       train_compute_valid = (turn+1) % valid_epoch_period == 0
       if train_compute_valid:
+#         print("== running before test ==")
         valid_output_result = model_running(self.batch_train_test_model, self.train_ds, test_mode)
+#         print("== running after test ==")
         valid_avg = compute_average(valid_output_result)
 #         valid_noavg = process_noavg(valid_output_result)
         '''
@@ -280,7 +284,7 @@ class ModelRunner():
   
   
 def model_running(model, ds, decode_mode):
-  all_token_accuracy = 0
+  all_token_accuracy = np.zeros(len(top_ks), np_float_type)
   all_token_count = 0
   all_token_loss = 0
 #   iterator = ds.make_one_shot_iterator()
@@ -292,7 +296,7 @@ def model_running(model, ds, decode_mode):
   for next_element in ds:
     batch_token_loss, batch_token_accuracy, batch_token_count = model.batch_train_test(next_element['origin_sequence'], next_element['relative_to_part_first'], next_element['valid_mask'], decode_mode)
     all_token_loss += batch_token_loss
-    all_token_accuracy += batch_token_accuracy
+    all_token_accuracy += np.asarray(batch_token_accuracy, np_float_type)
     all_token_count += batch_token_count
 #     except tf.errors.OutOfRangeError:
 #       break
@@ -300,6 +304,7 @@ def model_running(model, ds, decode_mode):
 #       assert False
     i+=1
   end_time = time.time()
+#   print("all_token_loss:" + str(all_token_loss))
   print("mode:" + str(decode_mode) + "#batch_size:" + str(i) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
   return {'token_loss':all_token_loss, 'token_accuracy':all_token_accuracy, 'token_count':all_token_count}
   
@@ -375,7 +380,7 @@ def compute_average(dict_t):
       first_k_part = k[0:idx]
       k_count = first_k_part + '_count'
       k_tm = "average_" + k
-      divd = dict_t[k_count]
+      divd = dict_t[k_count].astype(np_float_type)
       if divd == 0.0:
         divd = 0.0000000001
       r[k_tm] = de_numpy(dict_t[k]/divd)

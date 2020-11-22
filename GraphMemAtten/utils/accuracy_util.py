@@ -67,20 +67,21 @@ def compute_batch_top_ks_accuracy(predictions, oracle_tgt, valid_mask):
   r_oracle_tgt = tf.expand_dims(oracle_tgt, axis=2)
   r_oracle_tgt = tf.tile(r_oracle_tgt, [1, 1, top_ks[-1]])
   imd_equal = tf.cast(predictions == r_oracle_tgt, int_type)
-  
+#   print("tf.shape(predictions):" + str(tf.shape(predictions)))
+#   print("tf.shape(oracle_tgt):" + str(tf.shape(oracle_tgt)))
+#   print("tf.shape(valid_mask):" + str(tf.shape(valid_mask)))
   token_accuracy = []
   for i in range(len(top_ks)):
     tpk_imd_equal = imd_equal * top_ks_tensors[i]
     imd_out_i = tf.cast(tf.reduce_sum(tpk_imd_equal, axis=2) >= 1, int_type)
     imd_out_i = imd_out_i * valid_mask
     imd_out_i_sum = tf.reduce_sum(imd_out_i)
-    token_accuracy.append(imd_out_i_sum)
+    token_accuracy.append(tf.cast(imd_out_i_sum, float_type))
   ''' immediate_output shape: [seq_length, batch_size, len(top_ks)] '''
   
   ''' final output shape: [len(top_ks)] '''
   
-  token_count = tf.reduce_sum(valid_mask)
-  return token_accuracy, token_count
+  return token_accuracy
 
 
 

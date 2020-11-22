@@ -2,8 +2,7 @@ import tensorflow as tf
 from meta_info.hyper_parameter import d_head, n_head, n_layer,\
   d_embed, d_model, n_token, dropout, d_inner, dropatt, oracle_mem_len,\
   untie_r
-from meta_info.non_hyper_constant import normal_initializer, top_ks, float_type,\
-  int_type
+from meta_info.non_hyper_constant import normal_initializer, top_ks, float_type
 from utils.initialize_util import random_normal_variable_initializer,\
   zero_variable_initializer
 
@@ -92,8 +91,8 @@ class Transformer(tf.keras.Model):
     y *= emb_scale
     return y
   
-  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, compute_prediction,
-                               return_mean=True):
+  # return_mean=True
+  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, compute_prediction):
     def _logit(x, W, b, proj):
       y = x
       if proj is not None:
@@ -102,29 +101,32 @@ class Transformer(tf.keras.Model):
   
     output = _logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
     
-    nll = None
-    if not compute_prediction:
-      nll = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target,
-                                                           logits=output)
-      print("n_token:" + str(n_token))
-      target_max = tf.reduce_max(target)
-      print("target_max:" + str(target_max))
-      all_nll_nans = tf.reduce_sum(tf.cast(tf.math.is_nan(nll), int_type))
-      print("all_nll_nans:" + str(all_nll_nans))
+#     nll = None
+#     if not compute_prediction:
+    nll = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target,
+                                                         logits=output)
     
-#       print("nll:" + str(nll))
-      ''' ['tf.shape(output):', [128 6 27]] '''
-      ''' ['tf.shape(nll):', [128 6]] '''
-      nll = nll * tf.cast(valid_mask, float_type)
-      if return_mean:
-        nll = tf.reduce_mean(input_tensor=nll)
+    ''' ['tf.shape(output):', [128 6 27]] '''
+    ''' ['tf.shape(nll):', [128 6]] '''
+    nll = nll * tf.cast(valid_mask, float_type)
+    
+#     if return_mean:
+#       nll = tf.reduce_mean(input_tensor=nll)
+    nll = tf.reduce_sum(input_tensor=nll)
+      
+#       print("n_token:" + str(n_token))
+#       target_max = tf.reduce_max(target)
+#       print("target_max:" + str(target_max))
+#       all_nll_nans = tf.reduce_sum(tf.cast(tf.math.is_nan(nll), int_type))
+#       print("all_nll_nans:" + str(all_nll_nans))
+#     print("reduced nll:" + str(nll))
       
     probs, predictions = None, None
     if compute_prediction:
       ''' ['tf.shape(predictions):', [128 6 top_ks[-1]]] '''
       t_probs = tf.math.log(tf.nn.softmax(output, axis=2))
       probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
-      
+#     print("nll:" + str(nll))
     return probs, predictions, nll
   
   def transformer(self, dec_inp, target, mems, valid_mask, is_training, 
@@ -220,7 +222,7 @@ class Transformer(tf.keras.Model):
         hidden=output,
         target=target,
         valid_mask=valid_mask,
-        compute_prediction=(is_training <= 0))
+        compute_prediction=(is_training == False))
     
     return output, probs, predictions, loss, new_mems
   
