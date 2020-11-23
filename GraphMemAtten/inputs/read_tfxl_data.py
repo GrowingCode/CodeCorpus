@@ -14,6 +14,8 @@ def parse_function(example_proto):
             'valid_mask_shape': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
             'seq_part_skip': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
             'seq_part_skip_shape': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
+            'token_type': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
+            'token_type_shape': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
           }
   
   parsed_example = tf.io.parse_single_example(example_proto, dics)
@@ -25,12 +27,15 @@ def parse_function(example_proto):
   parsed_example['valid_mask_shape'] = tf.io.decode_raw(parsed_example['valid_mask_shape'], int_type)
   parsed_example['seq_part_skip'] = tf.io.decode_raw(parsed_example['seq_part_skip'], int_type)
   parsed_example['seq_part_skip_shape'] = tf.io.decode_raw(parsed_example['seq_part_skip_shape'], int_type)
+  parsed_example['token_type'] = tf.io.decode_raw(parsed_example['token_type'], int_type)
+  parsed_example['token_type_shape'] = tf.io.decode_raw(parsed_example['token_type_shape'], int_type)
 #   print(parsed_example['origin_sequence'])
 #   print(parsed_example['origin_sequence_shape'])
   parsed_example['origin_sequence'] = tf.reshape(parsed_example['origin_sequence'], parsed_example['origin_sequence_shape'])
   parsed_example['relative_to_part_first'] = tf.reshape(parsed_example['relative_to_part_first'], parsed_example['relative_to_part_first_shape'])
   parsed_example['valid_mask'] = tf.reshape(parsed_example['valid_mask'], parsed_example['valid_mask_shape'])
   parsed_example['seq_part_skip'] = tf.reshape(parsed_example['seq_part_skip'], parsed_example['seq_part_skip_shape'])
+  parsed_example['token_type'] = tf.reshape(parsed_example['token_type'], parsed_example['token_type_shape'])
   
   return parsed_example
   
