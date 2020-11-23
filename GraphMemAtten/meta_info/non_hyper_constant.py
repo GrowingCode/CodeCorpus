@@ -71,7 +71,9 @@ restrain_maximum_count = 10
 max_train_epoch = 200
 valid_epoch_period = 1
 
-
+accuracy_no_filter = -1
+accuracy_only_skt_filter = 0
+accuracy_non_skt_token_filter = 1
 
 
 

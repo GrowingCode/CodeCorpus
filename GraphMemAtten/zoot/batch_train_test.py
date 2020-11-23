@@ -45,7 +45,7 @@ class BatchTrainTest(tf.keras.Model):
     batch_size = np.shape(ori_sequence)[1]
     
     batch_token_loss = tf.constant(0, float_type)
-    batch_token_accuracy = [tf.constant(0, float_type) for _ in range(len(top_ks))]
+    batch_token_accuracy = tf.zeros([len(top_ks)], float_type)
     batch_token_count = tf.constant(0, int_type)
     
     all_outputs = tf.tile(self.all_outputs, [1, batch_size, 1])
@@ -92,19 +92,20 @@ class BatchTrainTest(tf.keras.Model):
         self.optimizer.apply_gradients(zip(nc_grads, self.trainable_variables))
       elif decode_mode == standard_infer_test or decode_mode == multi_infer_test:
         token_accuracy = compute_batch_top_ks_accuracy(predictions, part_tgt_sequence, part_valid_mask)
-        for j in range(len(top_ks)):
-          batch_token_accuracy[j] += token_accuracy[j]
+#         for j in range(len(top_ks)):
+#           batch_token_accuracy[j] += token_accuracy[j]
+        batch_token_accuracy += token_accuracy
       else:
         assert False
-    numpy_batch_token_accuracy = [one_token_accuracy.numpy() for one_token_accuracy in batch_token_accuracy]
-    return batch_token_loss.numpy(), numpy_batch_token_accuracy, batch_token_count.numpy()
+#     numpy_batch_token_accuracy = [one_token_accuracy.numpy() for one_token_accuracy in batch_token_accuracy]
+    return batch_token_loss.numpy(), batch_token_accuracy.numpy(), batch_token_count.numpy()
   
   def batch_test_beam(self, origin_sequence, seq_part_skip, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''
     ''' steps: split origin_sequence to each sequence '''
     sequences = tf.unstack(origin_sequence, axis=1)
     part_skips = tf.unstack(seq_part_skip, axis=1)
-    batch_token_each_acc, batch_token_whole_acc, batch_token_count = tf.constant(0, float_type), tf.constant(0, float_type), tf.constant(0, int_type)
+    batch_token_each_acc, batch_token_whole_acc, batch_token_count = tf.zeros([len(top_ks)], float_type), tf.zeros([len(top_ks)], float_type), tf.constant(0, int_type)
     for i in range(len(sequences)):
       sequence = sequences[i]
       part_skip = part_skips[i]
@@ -112,7 +113,7 @@ class BatchTrainTest(tf.keras.Model):
       batch_token_each_acc += token_each_acc
       batch_token_whole_acc += token_whole_acc
       batch_token_count += token_count
-    return batch_token_each_acc, batch_token_whole_acc, batch_token_count
+    return batch_token_each_acc.numpy(), batch_token_whole_acc.numpy(), batch_token_count.numpy()
   
   def get_mems(self, batch_size):
     if initial_memory_trainable:

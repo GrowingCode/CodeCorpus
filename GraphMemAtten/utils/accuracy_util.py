@@ -3,7 +3,11 @@ from meta_info.non_hyper_constant import float_type, int_type, top_ks,\
   top_ks_tensors
 
 
-def compute_accuracy_of_sequences(computed_en_seqs, oracle_computed_en_seq, compute_one_whole=True):
+def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, compute_one_whole=True):
+  
+  positive_idx = tf.where(oracle_valid_mask > 0)
+  oracle_computed_en_seq = tf.gather(raw_oracle_computed_en_seq, positive_idx)
+  computed_en_seqs = tf.gather(raw_computed_en_seqs, positive_idx, axis=1)
   
   e_lens = tf.ones_like(oracle_computed_en_seq)
   eq_all_lens_int = tf.reduce_sum(e_lens)
@@ -60,28 +64,46 @@ def compute_accuracy_of_sequences(computed_en_seqs, oracle_computed_en_seq, comp
   return f_each_acc, f_whole_acc, f_count
 
 
-def compute_batch_top_ks_accuracy(predictions, oracle_tgt, valid_mask):
+def compute_batch_top_ks_accuracy(predictions, oracle_tgt, r_valid_mask):
   ''' predictions shape: [seq_length, batch_size, top_ks[-1]] '''
   ''' oracle_tgt shape: [seq_length, batch_size] '''
-  ''' valid_mask shape: [seq_length, batch_size] '''
+  ''' r_valid_mask shape: [seq_length, batch_size] '''
   r_oracle_tgt = tf.expand_dims(oracle_tgt, axis=2)
   r_oracle_tgt = tf.tile(r_oracle_tgt, [1, 1, top_ks[-1]])
   imd_equal = tf.cast(predictions == r_oracle_tgt, int_type)
 #   print("tf.shape(predictions):" + str(tf.shape(predictions)))
 #   print("tf.shape(oracle_tgt):" + str(tf.shape(oracle_tgt)))
 #   print("tf.shape(valid_mask):" + str(tf.shape(valid_mask)))
-  token_accuracy = []
+  token_accuracy = tf.zeros([0], float_type)
   for i in range(len(top_ks)):
     tpk_imd_equal = imd_equal * top_ks_tensors[i]
     imd_out_i = tf.cast(tf.reduce_sum(tpk_imd_equal, axis=2) >= 1, int_type)
-    imd_out_i = imd_out_i * valid_mask
+    imd_out_i = imd_out_i * r_valid_mask
     imd_out_i_sum = tf.reduce_sum(imd_out_i)
-    token_accuracy.append(tf.cast(imd_out_i_sum, float_type))
+    token_accuracy = tf.concat([token_accuracy, [tf.cast(imd_out_i_sum, float_type)]], axis=0)
   ''' immediate_output shape: [seq_length, batch_size, len(top_ks)] '''
   
   ''' final output shape: [len(top_ks)] '''
   
   return token_accuracy
+
+
+# def generate_token_type_filter_mask(token_type):
+#   bool_mask = tf.logical_or(tf.equal(accuracy_filter_based_on_token_type, token_type), tf.equal(accuracy_filter_based_on_token_type, -1))
+#   int_mask = tf.cast(bool_mask, int_type)
+#   return int_mask
+
+
+def generate_token_type_filter_valid_mask(valid_mask, token_type, accuracy_filter_token_type):
+  bool_mask = tf.logical_or(tf.equal(accuracy_filter_token_type, token_type), tf.equal(accuracy_filter_token_type, -1))
+  int_mask = tf.cast(bool_mask, int_type)
+  r_mask = valid_mask * int_mask
+  return r_mask
+
+
+
+
+
 
 
 

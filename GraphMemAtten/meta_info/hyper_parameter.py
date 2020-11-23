@@ -23,6 +23,13 @@ batch_size = 10
 untie_r = 0
 
 accuracy_based_on_whole = 1
+# '''
+# token type:
+# -1: all 
+# 0: only skt
+# 1: only non-skt token
+# '''
+# accuracy_filter_based_on_token_type = accuracy_no_filter
 
 initial_memory_trainable = 0
 
@@ -35,7 +42,7 @@ train_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_train_tfxl.tfrecord"
 origin_test_file = data_dir + "/" + skeleton_mode + "_test_data.txt"
 test_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_test_tfxl.tfrecord"
 
-''' TODO: initialize n_token '''
+''' initialize n_token '''
 all_token_summary_file = open(data_dir + "/All_token_summary.json", 'r', encoding='UTF-8')
 all_token_summary_ts = json.load(all_token_summary_file)
 all_token_summary_file.close()

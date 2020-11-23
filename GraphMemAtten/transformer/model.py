@@ -113,7 +113,7 @@ class Transformer(tf.keras.Model):
 #     if return_mean:
 #       nll = tf.reduce_mean(input_tensor=nll)
     nll = tf.reduce_sum(input_tensor=nll)
-      
+    
 #       print("n_token:" + str(n_token))
 #       target_max = tf.reduce_max(target)
 #       print("target_max:" + str(target_max))
