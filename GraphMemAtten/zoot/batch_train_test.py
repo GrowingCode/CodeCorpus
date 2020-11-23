@@ -63,7 +63,7 @@ class BatchTrainTest(tf.keras.Model):
       if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
         with tf.GradientTape() as tape:
           if decode_mode == multi_infer_train:
-            _, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, is_training=True)
+            all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, is_training=True)
           elif decode_mode == standard_infer_train:
             _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=True)
           else:
@@ -71,7 +71,7 @@ class BatchTrainTest(tf.keras.Model):
       else:
         assert decode_mode == standard_infer_test or decode_mode == multi_infer_test
         if decode_mode == multi_infer_test:
-          _, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, is_training=False)
+          all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, is_training=False)
         elif decode_mode == standard_infer_test:
           _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=False)
         else:

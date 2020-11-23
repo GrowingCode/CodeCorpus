@@ -15,7 +15,7 @@ def batch_gather(contents, ids):
   r_all_col = tf.expand_dims(all_col, axis=2)
   r_ids = tf.expand_dims(ids, axis=2)
   nd_ids = tf.concat([r_ids, r_all_col], axis=2)
-  print(nd_ids)
+#   print(nd_ids)
   outputs = tf.gather_nd(contents, nd_ids)
   ''' outputs shape: [part_len, batch_size, feature_size] '''
   return outputs
