@@ -2,9 +2,8 @@ import tensorflow as tf
 from meta_info.hyper_parameter import d_head, n_head, n_layer,\
   d_embed, d_model, n_token, dropout, d_inner, dropatt, oracle_mem_len,\
   untie_r
-from meta_info.non_hyper_constant import normal_initializer, top_ks, float_type
-from utils.initialize_util import random_normal_variable_initializer,\
-  zero_variable_initializer
+from meta_info.non_hyper_constant import normal_initializer
+from utils.initialize_util import random_normal_variable_initializer
 
 
 def positional_embedding(pos_seq, inv_freq, bsz=None):
@@ -61,9 +60,6 @@ class Transformer(tf.keras.Model):
     self.proj_w = None
     if d_model != d_embed:
       self.proj_w = tf.Variable(random_normal_variable_initializer([d_embed, d_model]))
-      
-    self.token_output_w = tf.Variable(random_normal_variable_initializer([n_token, d_model]))
-    self.token_output_softmax_b = tf.Variable(zero_variable_initializer([n_token]))
     
     self.transformer_dropout1 = tf.keras.layers.Dropout(dropout)
     self.transformer_dropout2 = tf.keras.layers.Dropout(dropout)
@@ -90,44 +86,6 @@ class Transformer(tf.keras.Model):
     
     y *= emb_scale
     return y
-  
-  # return_mean=True
-  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, compute_prediction):
-    def _logit(x, W, b, proj):
-      y = x
-      if proj is not None:
-        y = tf.einsum('ibd,ed->ibe', y, proj)
-      return tf.einsum('ibd,nd->ibn', y, W) + b
-  
-    output = _logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
-    
-#     nll = None
-#     if not compute_prediction:
-    nll = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target,
-                                                         logits=output)
-    
-    ''' ['tf.shape(output):', [128 6 27]] '''
-    ''' ['tf.shape(nll):', [128 6]] '''
-    nll = nll * tf.cast(valid_mask, float_type)
-    
-#     if return_mean:
-#       nll = tf.reduce_mean(input_tensor=nll)
-    nll = tf.reduce_sum(input_tensor=nll)
-    
-#       print("n_token:" + str(n_token))
-#       target_max = tf.reduce_max(target)
-#       print("target_max:" + str(target_max))
-#       all_nll_nans = tf.reduce_sum(tf.cast(tf.math.is_nan(nll), int_type))
-#       print("all_nll_nans:" + str(all_nll_nans))
-#     print("reduced nll:" + str(nll))
-      
-    probs, predictions = None, None
-    if compute_prediction:
-      ''' ['tf.shape(predictions):', [128 6 top_ks[-1]]] '''
-      t_probs = tf.math.log(tf.nn.softmax(output, axis=2))
-      probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
-#     print("nll:" + str(nll))
-    return probs, predictions, nll
   
   def transformer(self, dec_inp, target, mems, valid_mask, is_training, 
                   mem_len=oracle_mem_len, 

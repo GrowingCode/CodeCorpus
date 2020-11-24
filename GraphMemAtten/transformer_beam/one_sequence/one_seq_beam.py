@@ -19,7 +19,7 @@ class OneSeqBeam():
     self.transformer_model = transformer_model
     self.multi_position_transfer = multi_position_transfer
   
-  def __call__(self, mems, whole_seq, part_seq_skip, token_type, decode_mode):
+  def __call__(self, mems, whole_seq, part_seq_skip, decode_mode):
     origin_mems_len = tf.shape(mems[0])[0]
     
     ''' generate stored memory for whole sequence '''
