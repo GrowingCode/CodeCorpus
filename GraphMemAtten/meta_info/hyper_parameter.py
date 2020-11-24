@@ -1,4 +1,4 @@
-from meta_info.non_hyper_constant import standard_infer, data_dir, skeleton_pe,\
+from meta_info.non_hyper_constant import data_dir, skeleton_pe,\
   skeleton_one, skeleton_e
 import json
 
@@ -34,7 +34,7 @@ accuracy_based_on_whole = 1
 initial_memory_trainable = 0
 
 compute_beam = 0
-run_decode_info = standard_infer
+# run_decode_info = standard_infer
 skeleton_mode = skeleton_pe
 
 origin_train_file = data_dir + "/" + skeleton_mode + "_train_data.txt"

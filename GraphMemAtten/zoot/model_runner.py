@@ -3,7 +3,7 @@ import os
 import time
 
 from inputs.read_tfxl_data import generate_parsed_dataset
-from meta_info.hyper_parameter import run_decode_info, compute_beam,\
+from meta_info.hyper_parameter import compute_beam,\
   train_tfxl_tfrecord, origin_train_file, test_tfxl_tfrecord,\
   origin_test_file
 from meta_info.non_hyper_constant import model_storage_dir, model_storage_parent_dir, meta_dir, turn_info, \
@@ -452,9 +452,16 @@ if __name__ == '__main__':
     generate_tfxl_record(origin_test_file, test_tfxl_tfrecord)
   
   mr = ModelRunner()
-  mr.train_and_test(run_decode_info)
+  mr.train_and_test(standard_infer)
+  mr.train_and_test(multi_infer)
   if compute_beam:
-    mr.test_beam(run_decode_info)
+    mr.test_beam(standard_infer)
+    mr.test_beam(multi_infer)
+
+
+
+
+
 
 
 
