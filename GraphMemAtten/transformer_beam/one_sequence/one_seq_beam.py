@@ -10,7 +10,7 @@ from utils.meta_util import get_varied_memory_shape_in_while_loop
 from utils.memory_util import get_recent_fixed_length_memory,\
   update_recent_fixed_length_memory
 from utils.accuracy_util import compute_accuracy_of_sequences
-from utils.loss_accurate_util import compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_embeddings
+from utils.loss_accurate_util import compute_loss_and_accurate_and_top_k_prediction_from_linear_with_loss_calculator
 
 
 class OneSeqBeam():
@@ -164,7 +164,7 @@ class OneSeqBeam():
     def multi_infer_body(self, i, i_len, o_log_probs, o_ens):
       t_h = self.multi_position_transfer.transfer(i, output)
       
-      o_log_probs_of_this_node, o_ens_of_this_node, _, _, _ = compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_embeddings(False, self.transformer_model.get_token_output_parameters(), -1, t_h)
+      o_log_probs_of_this_node, o_ens_of_this_node, _, _, _ = compute_loss_and_accurate_and_top_k_prediction_from_linear_with_loss_calculator(False, self.transformer_model.loss_calculator, -1, t_h)
       
       o_log_probs = tf.concat([o_log_probs, [o_log_probs_of_this_node]], axis=0)
       o_ens = tf.concat([o_ens, [o_ens_of_this_node]], axis=0)

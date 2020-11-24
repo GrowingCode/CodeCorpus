@@ -1,5 +1,6 @@
 import tensorflow as tf
 from utils.batch_gather_util import batch_gather
+from transformer.loss_model import LossCalculator
 
 
 class MultiDecodeModel(tf.keras.Model):
@@ -8,6 +9,7 @@ class MultiDecodeModel(tf.keras.Model):
     super(MultiDecodeModel, self).__init__()
     self.transformer_model = transformer_model
     self.multi_position_transfer = multi_position_transfer
+    self.loss_calculator = LossCalculator()
   
   def multi_decode(self, dec_inp, target, relative_to_part_first, all_outputs, mems, valid_mask, is_training):
     target_length = tf.shape(target)[0]
@@ -27,7 +29,7 @@ class MultiDecodeModel(tf.keras.Model):
     
     ''' used_outputs shape: [target_length batch_size feature_size] '''
     transferred_outputs = self.multi_position_transfer.transfer(outs_positions, used_outputs)
-    probs, predictions, loss = self.transformer_model.mask_adaptive_logsoftmax(transferred_outputs, target, valid_mask, is_training == False)
+    probs, predictions, loss = self.loss_calculator.mask_adaptive_logsoftmax(transferred_outputs, target, valid_mask, is_training == False)
     
     return new_all_outputs, probs, predictions, loss, new_mems
 

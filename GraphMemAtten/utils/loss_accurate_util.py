@@ -112,6 +112,25 @@ def compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_emb
   return log_probs, ens, mrr, accurate, loss
 
 
+def compute_loss_and_accurate_and_top_k_prediction_from_linear_with_loss_calculator(training, loss_calculator, target, output):
+  '''
+  public class for computing loss and accurate
+  '''
+  logits = compute_logits_given_to_deocde_embed_with_computed_embeddings(computed_embeddings, output)
+  loss = linear_loss(oracle_index_in_computed_embeddings, logits)# desc_prefix, type_content_data, 
+  '''
+  the following two functions are to compute accurate
+  compute accuracy for type and content
+  '''
+  if training:
+    log_probs, ens, mrr, accurate = tf.zeros([top_ks[-1]], float_type)-10000000, tf.zeros([top_ks[-1]], int_type)-1, tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
+  else:
+    log_probs, ens, mrr, accurate = compute_linear_accurate_with_top_k_prediction(oracle_index_in_computed_embeddings, logits)
+  return log_probs, ens, mrr, accurate, loss
+
+
+
+
 
 
 

@@ -4,6 +4,7 @@ from meta_info.hyper_parameter import d_head, n_head, n_layer,\
   untie_r
 from meta_info.non_hyper_constant import normal_initializer
 from utils.initialize_util import random_normal_variable_initializer
+from transformer.loss_model import LossCalculator
 
 
 def positional_embedding(pos_seq, inv_freq, bsz=None):
@@ -60,6 +61,7 @@ class Transformer(tf.keras.Model):
     self.proj_w = None
     if d_model != d_embed:
       self.proj_w = tf.Variable(random_normal_variable_initializer([d_embed, d_model]))
+    self.loss_calculator = LossCalculator()
     
     self.transformer_dropout1 = tf.keras.layers.Dropout(dropout)
     self.transformer_dropout2 = tf.keras.layers.Dropout(dropout)
@@ -176,7 +178,7 @@ class Transformer(tf.keras.Model):
     output = self.transformer_dropout3(output, training=is_training)
     
     ''' ['tf.shape(output):', [128 6 128], 'tf.shape(target):', [128 6]] '''
-    probs, predictions, loss = self.mask_adaptive_logsoftmax(
+    probs, predictions, loss = self.loss_calculator.mask_adaptive_logsoftmax(
         hidden=output,
         target=target,
         valid_mask=valid_mask,
@@ -184,13 +186,14 @@ class Transformer(tf.keras.Model):
     
     return output, probs, predictions, loss, new_mems
   
-  def get_token_output_parameters(self):
-    return self.token_output_w
+#   def get_token_output_parameters(self):
+#     return self.token_output_w
   
 
-class TransformerLayer():
+class TransformerLayer(tf.keras.Model):
   
   def __init__(self):
+    super(TransformerLayer, self).__init__()
     self.pos_wise_ff_dense1 = tf.keras.layers.Dense(d_inner, activation=tf.nn.relu, kernel_initializer=normal_initializer)
     self.pos_wise_ff_dropout1 = tf.keras.layers.Dropout(dropout)
     self.pos_wise_ff_dense2 = tf.keras.layers.Dense(d_model, activation=tf.nn.relu, kernel_initializer=normal_initializer)
