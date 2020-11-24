@@ -10,14 +10,14 @@ from utils.meta_util import get_varied_memory_shape_in_while_loop
 from utils.memory_util import get_recent_fixed_length_memory,\
   update_recent_fixed_length_memory
 from utils.accuracy_util import compute_accuracy_of_sequences
-from utils.loss_accurate_util import compute_loss_and_accurate_and_top_k_prediction_from_linear_with_loss_calculator
 
 
 class OneSeqBeam():
   
-  def __init__(self, transformer_model, multi_position_transfer):
+  def __init__(self, transformer_model, multi_decode_model):
     self.transformer_model = transformer_model
-    self.multi_position_transfer = multi_position_transfer
+    self.multi_decode_model = multi_decode_model
+    # multi_position_transfer 
   
   def __call__(self, mems, whole_seq, part_seq_skip, decode_mode):
     origin_mems_len = tf.shape(mems[0])[0]
@@ -77,7 +77,8 @@ class OneSeqBeam():
       token_mems_before_last = []
       for i in range(n_layer):
         token_mems_before_last.append(tf.slice(all_mems, [token_mems_start, 0, 0], [token_mems_end-token_mems_start+1, -1, -1]))
-      token_f_each_acc, token_f_whole_acc, token_f_count = self.infer_and_compute_accuracy(token_mems_before_last, token_last_before, token_part_seq, decode_mode)
+      r_token_last_before = tf.expand_dims(tf.expand_dims(token_last_before, axis=0), axis=1)
+      token_f_each_acc, token_f_whole_acc, token_f_count = self.infer_and_compute_accuracy(token_mems_before_last, r_token_last_before, token_part_seq, decode_mode)
       token_each_acc += token_f_each_acc
       token_whole_acc += token_f_whole_acc
       token_count += token_f_count
@@ -105,7 +106,7 @@ class OneSeqBeam():
     return f_each_acc, f_whole_acc, f_count
   
   def infer(self, mems_before_last, last_token, steps):
-    
+    ''' last_token shape: [1, 1] '''
     ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
     ''' here mems_before_last shape should be extended to [n_layer memory_length batch_size feature_size] '''
     for i in range(n_layer):
@@ -162,10 +163,12 @@ class OneSeqBeam():
       return tf.less(i, i_len)
     
     def multi_infer_body(self, i, i_len, o_log_probs, o_ens):
-      t_h = self.multi_position_transfer.transfer(i, output)
-      
-      o_log_probs_of_this_node, o_ens_of_this_node, _, _, _ = compute_loss_and_accurate_and_top_k_prediction_from_linear_with_loss_calculator(False, self.transformer_model.loss_calculator, -1, t_h)
-      
+      transfer_i = tf.expand_dims(tf.expand_dims(i, 0), 1)
+      t_h = self.multi_decode_model.multi_position_transfer.transfer(transfer_i, output)
+      ''' t_h shape: [1, 1, feature_size] '''
+      o_log_probs_of_this_node, o_ens_of_this_node = self.multi_decode_model.loss_calculator.only_compute_predictions(t_h)
+      o_log_probs_of_this_node = tf.squeeze(o_log_probs_of_this_node)
+      o_ens_of_this_node = tf.squeeze(o_ens_of_this_node)
       o_log_probs = tf.concat([o_log_probs, [o_log_probs_of_this_node]], axis=0)
       o_ens = tf.concat([o_ens, [o_ens_of_this_node]], axis=0)
       

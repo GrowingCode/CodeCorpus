@@ -16,13 +16,8 @@ class LossCalculator(tf.keras.Model):
   
   # return_mean=True
   def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, compute_prediction):
-    def _logit(x, W, b, proj):
-      y = x
-      if proj is not None:
-        y = tf.einsum('ibd,ed->ibe', y, proj)
-      return tf.einsum('ibd,nd->ibn', y, W) + b
   
-    output = _logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
+    output = generate_logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
     
 #     nll = None
 #     if not compute_prediction:
@@ -51,7 +46,21 @@ class LossCalculator(tf.keras.Model):
       probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
 #     print("nll:" + str(nll))
     return probs, predictions, nll
+  
+  def only_compute_predictions(self, t_h):
+    ''' t_h shape: [tgt_size, batch_size, feature_size] actually [1, 1, feature_size] '''
+    ''' output shape: [tgt_size, batch_size, top_ks[-1]] '''
+    output = generate_logit(t_h, self.token_output_w, self.token_output_softmax_b, self.proj_w)
+    t_probs = tf.math.log(tf.nn.softmax(output, axis=2))
+    probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
+    return probs, predictions
 
+
+def generate_logit(x, W, b, proj):
+      y = x
+      if proj is not None:
+        y = tf.einsum('ibd,ed->ibe', y, proj)
+      return tf.einsum('ibd,nd->ibn', y, W) + b
 
 
 

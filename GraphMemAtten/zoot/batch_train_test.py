@@ -31,7 +31,7 @@ class BatchTrainTest(tf.keras.Model):
     self.optimizer = tf.optimizers.Adam(self.decay)
     
     if compute_beam:
-      self.one_seq_beam = OneSeqBeam(self.transformer_model, self.multi_position_transfer)
+      self.one_seq_beam = OneSeqBeam(self.transformer_model, self.multi_decode_model)# self.multi_position_transfer
   
   def batch_train_test(self, origin_sequence, relative_to_part_first, valid_mask, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''
