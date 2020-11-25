@@ -186,9 +186,6 @@ class Transformer(tf.keras.Model):
     
     return output, probs, predictions, loss, new_mems
   
-#   def get_token_output_parameters(self):
-#     return self.token_output_w
-  
 
 class TransformerLayer(tf.keras.Model):
   
