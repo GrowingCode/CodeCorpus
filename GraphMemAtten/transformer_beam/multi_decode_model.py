@@ -23,12 +23,13 @@ class MultiDecodeModel(tf.keras.Model):
     ''' outputs shape: [target_length batch_size feature_size] '''
     new_all_outputs = tf.concat([all_outputs, outputs], axis=0)
     
-    outs_positions = tf.tile(tf.expand_dims(tf.range(target_length), axis=1), [1, 6]) - target_length - relative_to_part_first - 1
+    all_o_length = tf.shape(new_all_outputs)[0]
+    outs_positions = tf.tile(tf.expand_dims(tf.range(target_length), axis=1), [1, 6]) - target_length - relative_to_part_first - 1 + all_o_length
     used_outputs = batch_gather(new_all_outputs, outs_positions)
 #     used_outputs = tf.gather_nd(params=new_all_outputs, indices=outs_positions)
     
     ''' used_outputs shape: [target_length batch_size feature_size] '''
-    transferred_outputs = self.multi_position_transfer.transfer(outs_positions, used_outputs)
+    transferred_outputs = self.multi_position_transfer.transfer(relative_to_part_first, used_outputs)
     probs, predictions, loss = self.loss_calculator.mask_adaptive_logsoftmax(transferred_outputs, target, valid_mask, is_training == False)
     
     return new_all_outputs, probs, predictions, loss, new_mems

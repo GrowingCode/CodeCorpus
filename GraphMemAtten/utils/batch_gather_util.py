@@ -31,7 +31,8 @@ if __name__ == '__main__':
   s5 = s4 + 1
   
   contents = tf.concat([s1, s2, s3, s4, s5], axis=0)
-  ids = tf.constant([[1,2],[2,3]], int_type)
+  print(contents)
+  ids = tf.constant([[1,2],[2,4]], int_type)
   outputs = batch_gather(contents, ids)
   print(outputs)
 

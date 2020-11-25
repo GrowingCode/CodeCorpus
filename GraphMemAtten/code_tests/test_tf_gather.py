@@ -15,4 +15,10 @@ computed_en_seqs = tf.gather(raw_computed_en_seqs, positive_idx, axis=1)
 print(oracle_computed_en_seq)
 print(computed_en_seqs)
 
-  
+print("==== split line ====")
+
+a = tf.constant([1, 2, 3, 4, 5, 6, 7, 8], int_type)
+b = tf.gather(params=a, indices=[-2, -1])
+print(b)
+
+

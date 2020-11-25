@@ -9,6 +9,7 @@ class LossCalculator(tf.keras.Model):
   
   def __init__(self):
     super(LossCalculator, self).__init__()
+    self.proj_w = None
     if d_model != d_embed:
       self.proj_w = tf.Variable(random_normal_variable_initializer([d_embed, d_model]))
     self.token_output_w = tf.Variable(random_normal_variable_initializer([n_token, d_model]))
