@@ -453,9 +453,11 @@ if __name__ == '__main__':
   
   mr = ModelRunner()
   mr.train_and_test(standard_infer)
-  mr.train_and_test(multi_infer)
   if compute_beam:
     mr.test_beam(standard_infer)
+    
+  mr.train_and_test(multi_infer)
+  if compute_beam:
     mr.test_beam(multi_infer)
 
 
