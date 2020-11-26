@@ -248,7 +248,7 @@ class ModelRunner():
 #     best_info_txt = self.real_model_storage_dir + '/' + decode_info + "_" + best_info
     best_txt = self.real_model_storage_dir + '/' + decode_info + "_" + best_summary
     best_model_directory = self.real_model_storage_dir + '/' + decode_info + "_" + model_best
-    best_model_file = best_model_directory + '/' + decode_info + _ + 'model_weights'
+    best_model_file = best_model_directory + '/' + decode_info + "_" + 'model_weights'
     
     self.batch_train_test_model.save_weights(best_model_file)
     print("Restored best model in " + best_model_directory)
@@ -320,7 +320,7 @@ def beam_model_running(model, ds, decode_mode):
 #   while True:
 #     try:
   for next_element in ds:
-    batch_token_each_acc, batch_token_whole_acc, batch_token_count = model.batch_test_beam(next_element['origin_sequence'], next_element['seq_part_skip'], decode_mode)
+    batch_token_each_acc, batch_token_whole_acc, batch_token_count = model.batch_test_beam(next_element['origin_sequence'], next_element['valid_mask'], next_element['seq_part_skip'], decode_mode)
     all_token_each_acc += batch_token_each_acc
     all_token_whole_accuracy += batch_token_whole_acc
     all_token_count += batch_token_count

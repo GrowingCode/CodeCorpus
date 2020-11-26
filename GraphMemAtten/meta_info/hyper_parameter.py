@@ -33,7 +33,7 @@ accuracy_based_on_whole = 1
 
 initial_memory_trainable = 0
 
-compute_beam = 0
+compute_beam = 1
 # run_decode_info = standard_infer
 skeleton_mode = skeleton_pe
 
