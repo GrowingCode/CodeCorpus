@@ -132,29 +132,33 @@ class ModelRunner():
     '''
     total_turn_sum_train_time_cost = 0.0
     total_turn_sum = 0.0
+    total_turn_average_train_time_cost = 0.0
     while turn < max_train_epoch:
       '''
       one epoch starts
       '''
-      train_start_time = time.time()
-      train_output_result = model_running(self.batch_train_test_model, self.train_ds, train_mode)
-      train_end_time = time.time()
-      train_time_cost = train_end_time - train_start_time
-      total_turn_sum_train_time_cost = total_turn_sum_train_time_cost + train_time_cost
-      total_turn_sum = total_turn_sum + 1.0
-      total_turn_average_train_time_cost = total_turn_sum_train_time_cost / total_turn_sum
-      ''' exactly record train loss '''
-#       print("train_output_result:" + str(train_output_result))
-      train_avg = compute_average(train_output_result)
-#       print("train_avg:" + str(train_avg))
-#       train_noavg = process_noavg(train_output_result)
-#       with open(self.train_noavg_json, 'w') as train_noavg_record:
-#         train_noavg_record.write(json.dumps(train_noavg))
-      train_average_loss = train_avg["average_token_loss"]
-      '''
-      compute average loss when training
-      '''
-      print(str(turn+1) + "/" + str(max_train_epoch) + " turn's train_set_average_loss:" + str(train_average_loss))
+      if turn > 0:
+        train_start_time = time.time()
+        train_output_result = model_running(self.batch_train_test_model, self.train_ds, train_mode)
+        train_end_time = time.time()
+        train_time_cost = train_end_time - train_start_time
+        total_turn_sum_train_time_cost = total_turn_sum_train_time_cost + train_time_cost
+        total_turn_sum = total_turn_sum + 1.0
+        total_turn_average_train_time_cost = total_turn_sum_train_time_cost / total_turn_sum
+        ''' exactly record train loss '''
+  #       print("train_output_result:" + str(train_output_result))
+        train_avg = compute_average(train_output_result)
+  #       print("train_avg:" + str(train_avg))
+  #       train_noavg = process_noavg(train_output_result)
+  #       with open(self.train_noavg_json, 'w') as train_noavg_record:
+  #         train_noavg_record.write(json.dumps(train_noavg))
+        train_average_loss = train_avg["average_token_loss"]
+        '''
+        compute average loss when training
+        '''
+        print(str(turn+1) + "/" + str(max_train_epoch) + " turn's train_set_average_loss:" + str(train_average_loss))
+      else:
+        print("turn:" + str(turn) + " do not train.")
       '''
       testing process if period reached
       '''
@@ -247,11 +251,6 @@ class ModelRunner():
     
 #     best_info_txt = self.real_model_storage_dir + '/' + decode_info + "_" + best_info
     best_txt = self.real_model_storage_dir + '/' + decode_info + "_" + best_summary
-    best_model_directory = self.real_model_storage_dir + '/' + decode_info + "_" + model_best
-    best_model_file = best_model_directory + '/' + decode_info + "_" + 'model_weights'
-    
-    self.batch_train_test_model.save_weights(best_model_file)
-    print("Restored best model in " + best_model_directory)
 #     '''
 #     compute valid set each_noavg accuracy
 #     '''
@@ -281,6 +280,13 @@ class ModelRunner():
 #     with open(self.test_noavg_json, 'w') as test_noavg_record:
 #       test_noavg_record.write(json.dumps(noavg))
     print(dict_to_string(avg))
+  
+  def restore_best(self, decode_info):
+    best_model_directory = self.real_model_storage_dir + '/' + decode_info + "_" + model_best
+    best_model_file = best_model_directory + '/' + decode_info + "_" + 'model_weights'
+    
+    self.batch_train_test_model.load_weights(best_model_file)
+    print("Restored best model in " + best_model_directory)
   
   
 def model_running(model, ds, decode_mode):
@@ -453,10 +459,12 @@ if __name__ == '__main__':
   
   mr = ModelRunner()
   mr.train_and_test(standard_infer)
+  mr.restore_best(standard_infer)
   if compute_beam:
     mr.test_beam(standard_infer)
-    
+  
   mr.train_and_test(multi_infer)
+  mr.restore_best(multi_infer)
   if compute_beam:
     mr.test_beam(multi_infer)
 

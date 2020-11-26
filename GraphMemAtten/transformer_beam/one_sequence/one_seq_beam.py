@@ -193,7 +193,10 @@ class OneSeqBeam():
     r_steps = tf.cast(tf.minimum(multi_infer_num, steps), int_type)
     _, _, o_log_probs, o_ens = tf.while_loop(multi_infer_cond, multi_infer_body, [i, r_steps, o_log_probs, o_ens], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, top_ks[-1]]), tf.TensorShape([None, top_ks[-1]])], parallel_iterations=1)
     computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
-    ''' TODO: ensure computed_en_seqs to shape: [steps, top_ks[-1]] '''
+    ''' ensure computed_en_seqs to shape: [top_ks[-1], steps] '''
+#     print("str(tf.shape(computed_en_seqs)):" + str(tf.shape(computed_en_seqs)))
+    t_cat = tf.zeros([top_ks[-1], steps - r_steps], int_type) - 1
+    computed_en_seqs = tf.concat([computed_en_seqs, t_cat], axis=1)
     return computed_en_seqs
     
     
