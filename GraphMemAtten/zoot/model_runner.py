@@ -330,7 +330,7 @@ def beam_model_running(model, ds, decode_mode):
 #       assert False
     i+=1
   end_time = time.time()
-  print("mode:" + decode_mode + "#batch_size:" + str(i) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
+  print("mode:" + str(decode_mode) + "#batch_size:" + str(i) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
   return {'token_each_acc':all_token_each_acc, 'token_whole_accuracy':all_token_whole_accuracy, 'token_count':all_token_count}
 
 
