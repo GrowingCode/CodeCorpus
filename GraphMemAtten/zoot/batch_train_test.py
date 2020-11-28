@@ -6,11 +6,11 @@ from meta_info.non_hyper_constant import float_type, \
 import numpy as np
 import tensorflow as tf
 from transformer.model import Transformer
-from transformer_beam.multi_decode_model import MultiDecodeModel
-from transformer_beam.multi_position_transfer import MultiPositionTransfer
 from utils.accuracy_util import compute_batch_top_ks_accuracy
 from utils.initialize_util import random_normal_variable_initializer
 from transformer_beam.one_sequence.one_seq_beam import OneSeqBeam
+from transformer.multi_position_transfer import MultiPositionTransfer
+from transformer.multi_decode_model import MultiDecodeModel
 
 
 class BatchTrainTest(tf.keras.Model):
@@ -26,9 +26,9 @@ class BatchTrainTest(tf.keras.Model):
     
     self.all_outputs = tf.Variable(random_normal_variable_initializer([oracle_mem_len, 1, d_model]))
     
-    self.decay = tf.keras.experimental.CosineDecay(2.5e-4, 100000, alpha=0.004)
+#     self.decay = tf.keras.experimental.CosineDecay(2.5e-4, 100000, alpha=0.004)
     
-    self.optimizer = tf.optimizers.Adam(self.decay)
+    self.optimizer = tf.optimizers.Adam()# self.decay
     
     if compute_beam:
       self.one_seq_beam = OneSeqBeam(self.transformer_model, self.multi_decode_model)# self.multi_position_transfer
