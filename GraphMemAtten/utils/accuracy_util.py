@@ -7,7 +7,7 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
 #   print("tf.shape(raw_computed_en_seqs):" + str(tf.shape(raw_computed_en_seqs)))
 #   print("tf.shape(raw_oracle_computed_en_seq):" + str(tf.shape(raw_oracle_computed_en_seq)))
 #   print("tf.shape(oracle_valid_mask):" + str(tf.shape(oracle_valid_mask)))
-    
+  
   positive_idx = tf.where(oracle_valid_mask > 0)
 #   print("tf.shape(tf.gather(raw_oracle_computed_en_seq, positive_idx)):" + str(tf.shape(tf.gather(raw_oracle_computed_en_seq, positive_idx))))
   oracle_computed_en_seq = tf.squeeze(tf.gather(raw_oracle_computed_en_seq, positive_idx), axis=1)
@@ -15,6 +15,8 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
   
 #   print("tf.shape(oracle_computed_en_seq):" + str(tf.shape(oracle_computed_en_seq)))
 #   print("tf.shape(computed_en_seqs):" + str(tf.shape(computed_en_seqs)))
+#   print("oracle_computed_en_seq:" + str(oracle_computed_en_seq))
+#   print("computed_en_seqs:" + str(computed_en_seqs))
   
   e_lens = tf.ones_like(oracle_computed_en_seq)
   eq_all_lens_int = tf.reduce_sum(e_lens)

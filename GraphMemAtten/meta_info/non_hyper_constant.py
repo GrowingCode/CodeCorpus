@@ -75,6 +75,9 @@ accuracy_no_filter = -1
 accuracy_only_skt_filter = 0
 accuracy_non_skt_token_filter = 1
 
+debug_beam_handle_only_one_first_example = 0
+
+
 
 
 

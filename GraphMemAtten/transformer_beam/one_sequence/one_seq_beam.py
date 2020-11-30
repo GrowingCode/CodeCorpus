@@ -71,18 +71,21 @@ class OneSeqBeam():
 #       skt_whole_acc += skt_f_whole_acc
 #       skt_count += skt_f_count
       
-      token_last_before = i-1
+      token_last_before_index = i-1
 #       token_last_before_valid = tf.cast(tf.greater_equal(token_last_before, 0), int_type)
 #       token_real_last_before = tf.stack([last_token_before_whole_seq, token_last_before])[token_last_before_valid]
       token_part_seq = tf.slice(whole_seq, [i], [part_seq_skip[i]])
       token_part_valid_mask = tf.slice(valid_mask, [i], [part_seq_skip[i]])
       
-      token_mems_end = origin_mems_len + token_last_before - 1
-      token_mems_start = tf.maximum(token_mems_end - oracle_test_mem_len, 0)
+      token_mems_end = token_last_before_index - 1 + origin_mems_len
+      token_mems_start = tf.maximum(token_mems_end - oracle_test_mem_len + 1, 0)
+      print("token_mems_start:" + str(token_mems_start) + "#token_mems_end:" + str(token_mems_end))
       token_mems_before_last = []
-      for i in range(n_layer):
-        token_mems_before_last.append(tf.slice(all_mems[i], [token_mems_start, 0, 0], [token_mems_end-token_mems_start+1, -1, -1]))
+      for j in range(n_layer):
+        token_mems_before_last.append(tf.slice(all_mems[j], [token_mems_start, 0, 0], [token_mems_end-token_mems_start+1, -1, -1]))
+      token_last_before = whole_seq[token_last_before_index]
       r_token_last_before = tf.expand_dims(tf.expand_dims(token_last_before, axis=0), axis=1)
+#       print("r_token_last_before:" + str(r_token_last_before))
       token_f_each_acc, token_f_whole_acc, token_f_count = self.infer_and_compute_accuracy(token_mems_before_last, r_token_last_before, token_part_seq, token_part_valid_mask, decode_mode)
       token_each_acc += token_f_each_acc
       token_whole_acc += token_f_whole_acc
@@ -107,6 +110,7 @@ class OneSeqBeam():
       inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, tf.shape(part_seq)[0])
     else:
       assert False
+    print("inferred_ens:" + str(inferred_ens) + "#last_token_before_part_seq:" + str(last_token_before_part_seq) + "#part_seq:" + str(part_seq))
     f_each_acc, f_whole_acc, f_count = compute_accuracy_of_sequences(inferred_ens, part_seq, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
     return f_each_acc, f_whole_acc, f_count
   
@@ -114,9 +118,6 @@ class OneSeqBeam():
     ''' last_token shape: [1, 1] '''
     ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
     ''' here mems_before_last shape should be extended to [n_layer memory_length batch_size feature_size] '''
-    for i in range(n_layer):
-      mems_before_last[i] = tf.tile(mems_before_last[i], [1, top_ks[-1], 1])
-    last_token = tf.tile(last_token, [1, top_ks[-1]])
     
     def infer_cond(i, *_):
       return tf.less(i, steps)
@@ -128,7 +129,8 @@ class OneSeqBeam():
       ''' l_token shape should be [1, batch_size] '''
       mems = list(mems_tuple)
       ''' mems shape should be [n_layer memory_length batch_size feature_size] '''
-      _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(l_token, tf.zeros_like(l_token)-1, mems, tf.ones_like(l_token), is_training=0, mem_len=oracle_mem_len)
+      _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(l_token, tf.zeros_like(l_token)-1, mems, tf.ones_like(l_token), is_training=False, mem_len=oracle_mem_len)
+      print("r_predictions in infer_body:" + str(r_predictions))
       ''' probs          should be [1, batch_size, top_ks[-1]] '''
       ''' predictions    should be [1, batch_size, top_ks[-1]] '''
       r_probs = tf.squeeze(r_probs, [0])
@@ -152,18 +154,28 @@ class OneSeqBeam():
       last_col_ens = tf.expand_dims(ens_values[:, -1], axis=0)
       return (i+1, probs_values, ens_values, last_col_ens, *new_mems)
     
-    i = tf.constant(0, int_type)
+    _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, tf.ones_like(last_token), is_training=False, mem_len=oracle_mem_len)
+    print("r_predictions out infer_body:" + str(r_predictions))
+    i = tf.constant(1, int_type)
+    probs = tf.squeeze(r_probs)
+    raw_ens = tf.squeeze(r_predictions)
+    ens = tf.expand_dims(raw_ens, axis=1)
+    l_token = tf.expand_dims(raw_ens, axis=0)
 #     i_len = tf.constant(steps, int_type)
-    probs = tf.zeros([top_ks[-1]], float_type)
-    ens = tf.zeros([top_ks[-1], 1], int_type) - 1
+#     probs = tf.zeros([top_ks[-1]], float_type)
+#     ens = tf.zeros([top_ks[-1], 1], int_type) - 1
+    wloop_mems = []
+    for j in range(n_layer):
+      wloop_mems.append(tf.tile(new_mems[j], [1, top_ks[-1], 1]))
+#     last_token = tf.tile(last_token, [1, top_ks[-1]])
     mems_shapes = get_varied_memory_shape_in_while_loop()
 #     i_len, 
-    _, probs, ens, *_ = tf.while_loop(infer_cond, infer_body, loop_vars=[i, probs, ens, last_token, *mems_before_last], shape_invariants=[tf.TensorShape(()), tf.TensorShape([top_ks[-1]]), tf.TensorShape([top_ks[-1], None]), tf.TensorShape([1, top_ks[-1]]), *mems_shapes], parallel_iterations=1)
+    _, probs, ens, *_ = tf.while_loop(infer_cond, infer_body, loop_vars=[i, probs, ens, l_token, *wloop_mems], shape_invariants=[tf.TensorShape(()), tf.TensorShape([top_ks[-1]]), tf.TensorShape([top_ks[-1], None]), tf.TensorShape([1, top_ks[-1]]), *mems_shapes], parallel_iterations=1)
     
 #     print("steps:" + str(steps))
 #     print("tf.shape(ens):" + str(tf.shape(ens)))
     
-    ens = tf.slice(ens, [0, 1], [-1, -1])
+#     ens = tf.slice(ens, [0, 1], [-1, -1])
 #     print("tf.shape(ens):" + str(tf.shape(ens)))
     return ens
   

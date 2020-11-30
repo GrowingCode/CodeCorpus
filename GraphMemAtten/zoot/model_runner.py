@@ -10,7 +10,8 @@ from meta_info.non_hyper_constant import model_storage_dir, model_storage_parent
   model_check_point, turn_summary, best_info, best_summary, model_best, model_config, \
   restrain_maximum_count, max_train_epoch, standard_infer_train, \
   standard_infer_test, multi_infer_test, multi_infer_train, valid_epoch_period, \
-  top_ks, np_float_type, standard_infer, multi_infer
+  top_ks, np_float_type, standard_infer, multi_infer,\
+  debug_beam_handle_only_one_first_example
 import numpy as np
 from utils.file_util import copy_files_from_one_directory_to_another_directory
 from zoot.batch_train_test import BatchTrainTest
@@ -325,7 +326,10 @@ def beam_model_running(model, ds, decode_mode):
   i = 1
 #   while True:
 #     try:
-  for next_element in ds:
+  r_ds = ds
+  if debug_beam_handle_only_one_first_example:
+    r_ds = ds.take(1)
+  for next_element in r_ds:
     batch_token_each_acc, batch_token_whole_acc, batch_token_count = model.batch_test_beam(next_element['origin_sequence'], next_element['valid_mask'], next_element['seq_part_skip'], decode_mode)
     all_token_each_acc += batch_token_each_acc
     all_token_whole_accuracy += batch_token_whole_acc
