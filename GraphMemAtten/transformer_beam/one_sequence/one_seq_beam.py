@@ -48,7 +48,9 @@ class OneSeqBeam():
     _, *all_mems = tf.while_loop(mem_gen_cond, mem_gen_body, [tf.constant(0, int_type), *mems], parallel_iterations=1)
     
     def osb_cond(i, *_):
-      return tf.logical_and(tf.less(i, seq_len), tf.greater(part_seq_skip[i], tf.constant(0, int_type)))
+      i_valid = tf.cast(tf.less(i, seq_len), int_type)
+      r_i = tf.stack([tf.constant(0, int_type), i])[i_valid]
+      return tf.greater(part_seq_skip[r_i], tf.constant(0, int_type))
   
     # skt_each_acc, skt_whole_acc, skt_count, 
     def osb_body(i, token_each_acc, token_whole_acc, token_count):

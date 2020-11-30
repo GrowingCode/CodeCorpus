@@ -2,7 +2,8 @@ from meta_info.hyper_parameter import oracle_mem_len, n_layer, d_model, initial_
   compute_beam
 from meta_info.non_hyper_constant import float_type, \
   multi_infer_test, multi_infer_train, standard_infer_test, standard_infer_train, top_ks,\
-  int_type, gradient_clip_abs_range
+  int_type, gradient_clip_abs_range,\
+  debug_beam_handle_only_one_first_example_in_batch
 import numpy as np
 import tensorflow as tf
 from transformer.model import Transformer
@@ -115,6 +116,8 @@ class BatchTrainTest(tf.keras.Model):
       batch_token_each_acc += token_each_acc
       batch_token_whole_acc += token_whole_acc
       batch_token_count += token_count
+      if debug_beam_handle_only_one_first_example_in_batch:
+        break
     return batch_token_each_acc.numpy(), batch_token_whole_acc.numpy(), batch_token_count.numpy()
   
   def get_mems(self, batch_size):
