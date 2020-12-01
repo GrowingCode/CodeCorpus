@@ -34,6 +34,7 @@ accuracy_based_on_whole = 1
 initial_memory_trainable = 0
 
 compute_beam = 1
+compute_multi_infer = 1
 # run_decode_info = standard_infer
 skeleton_mode = skeleton_pe
 
@@ -57,6 +58,7 @@ else:
   
 assert n_token > -1
 
+print("n_token:" + str(n_token) + "#SkeletonTokenHitNum:" + str(all_token_summary_ts["SkeletonTokenHitNum"]) + "#SktAccordingNum:" + str(n_token - 1 - all_token_summary_ts["SkeletonTokenHitNum"]))
 
 
 

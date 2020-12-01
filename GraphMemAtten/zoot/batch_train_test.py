@@ -41,6 +41,8 @@ class BatchTrainTest(tf.keras.Model):
 #     print("=== split line ===")
 #     print(ori_sequence)
     tgt_sequence = origin_sequence[1:,:]
+    r_relative_to_part_first = relative_to_part_first[1:,:]
+    r_valid_mask = valid_mask[1:,:]
     seq_len = np.shape(ori_sequence)[0]
 #     print("seq_len:" + str(seq_len))
     batch_size = np.shape(ori_sequence)[1]
@@ -59,8 +61,8 @@ class BatchTrainTest(tf.keras.Model):
       i_end = min([seq_len, i_end])
       part_ori_sequence = ori_sequence[i:i_end,:]
       part_tgt_sequence = tgt_sequence[i:i_end,:]
-      part_relative_to_part_first = relative_to_part_first[i:i_end,:]
-      part_valid_mask = valid_mask[i:i_end,:]
+      part_relative_to_part_first = r_relative_to_part_first[i:i_end,:]
+      part_valid_mask = r_valid_mask[i:i_end,:]
       if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
         with tf.GradientTape() as tape:
           if decode_mode == multi_infer_train:

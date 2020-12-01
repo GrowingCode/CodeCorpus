@@ -1,5 +1,5 @@
 import tensorflow as tf
-from meta_info.non_hyper_constant import float_type, top_ks
+from meta_info.non_hyper_constant import float_type, top_ks, int_type
 from meta_info.hyper_parameter import d_model, n_token, d_embed, multi_infer_num
 from utils.initialize_util import random_normal_variable_initializer,\
   zero_variable_initializer
@@ -27,11 +27,12 @@ class LossCalculator(tf.keras.Model):
     
     ''' ['tf.shape(output):', [128 6 27]] '''
     ''' ['tf.shape(nll):', [128 6]] '''
-    nll = nll * tf.cast(valid_mask, float_type)
+    r_nll = tf.where(tf.equal(valid_mask, tf.constant(1, int_type)), nll, tf.zeros_like(nll))
+#     nll = nll * tf.cast(valid_mask, float_type)
     
 #     if return_mean:
 #       nll = tf.reduce_mean(input_tensor=nll)
-    nll = tf.reduce_sum(input_tensor=nll)
+    r_nll = tf.reduce_sum(input_tensor=r_nll)
     
 #       print("n_token:" + str(n_token))
 #       target_max = tf.reduce_max(target)
@@ -45,8 +46,8 @@ class LossCalculator(tf.keras.Model):
       ''' ['tf.shape(predictions):', [128 6 top_ks[-1]]] '''
       t_probs = tf.math.log(tf.nn.softmax(output, axis=2))
       probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
-#     print("nll:" + str(nll))
-    return probs, predictions, nll
+#     print("r_nll:" + str(r_nll))
+    return probs, predictions, r_nll
   
   def only_compute_predictions(self, t_h):
     ''' t_h shape: [tgt_size, batch_size, feature_size] actually [1, 1, feature_size] '''

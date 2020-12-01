@@ -1,15 +1,15 @@
-import tensorflow as tf
-from utils.cartesian_util import batch_cartesian_add_each_scalar_in_vect,\
-  batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect,\
-  cartesian_add_one_dim_vector, cartesian_concat_two_dim_mats
-from meta_info.non_hyper_constant import int_type, float_type, top_ks,\
-  standard_infer_test, multi_infer_test
-from meta_info.hyper_parameter import oracle_mem_len, n_layer,\
+from meta_info.hyper_parameter import oracle_mem_len, n_layer, \
   oracle_tgt_len, accuracy_based_on_whole, oracle_test_mem_len, multi_infer_num
-from utils.meta_util import get_varied_memory_shape_in_while_loop
-from utils.memory_util import get_recent_fixed_length_memory,\
-  update_recent_fixed_length_memory
+from meta_info.non_hyper_constant import int_type, float_type, top_ks, \
+  standard_infer_test, multi_infer_test
+import tensorflow as tf
 from utils.accuracy_util import compute_accuracy_of_sequences
+from utils.cartesian_util import batch_cartesian_add_each_scalar_in_vect, \
+  batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect
+from utils.dynamic_program_util import dp_compute_en_seqs_from_distinct_parallel_tokens
+from utils.memory_util import get_recent_fixed_length_memory, \
+  update_recent_fixed_length_memory
+from utils.meta_util import get_varied_memory_shape_in_while_loop
 
 
 class OneSeqBeam():
@@ -132,7 +132,7 @@ class OneSeqBeam():
       mems = list(mems_tuple)
       ''' mems shape should be [n_layer memory_length batch_size feature_size] '''
       _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(l_token, tf.zeros_like(l_token)-1, mems, tf.ones_like(l_token), is_training=False, mem_len=oracle_mem_len)
-      print("r_predictions in infer_body:" + str(r_predictions))
+#       print("r_predictions in infer_body:" + str(r_predictions))
       ''' probs          should be [1, batch_size, top_ks[-1]] '''
       ''' predictions    should be [1, batch_size, top_ks[-1]] '''
       r_probs = tf.squeeze(r_probs, [0])
@@ -157,7 +157,7 @@ class OneSeqBeam():
       return (i+1, probs_values, ens_values, last_col_ens, *new_mems)
     
     _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, tf.ones_like(last_token), is_training=False, mem_len=oracle_mem_len)
-    print("r_predictions out infer_body:" + str(r_predictions))
+#     print("r_predictions out infer_body:" + str(r_predictions))
     i = tf.constant(1, int_type)
     probs = tf.squeeze(r_probs)
     raw_ens = tf.squeeze(r_predictions)
@@ -214,29 +214,9 @@ class OneSeqBeam():
     return computed_en_seqs
     
     
-def dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens):
-  
-  def compute_ens_cond(i, i_len, *_):
-    return tf.less(i, i_len)
-  
-  def compute_ens_body(i, i_len, acc_log_probs, acc_ens):
-    o_prob = o_log_probs[i]
-    o_en = o_ens[i]
-    
-    fa_log_probs = cartesian_add_one_dim_vector(acc_log_probs, o_prob)
-    fa_ens = cartesian_concat_two_dim_mats(acc_ens, tf.expand_dims(o_en, axis=1))
-    
-    _, indices = tf.nn.top_k(fa_log_probs, top_ks[-1])
-    sorted_probs = tf.gather(fa_log_probs, indices)
-    sorted_ens = tf.gather(fa_ens, indices)
-    
-    return i+1, i_len, sorted_probs, sorted_ens
-  
-  seq_len = tf.shape(o_log_probs)[0]
-  acc_log_probs = o_log_probs[0] # tf.zeros([top_ks[-1]], float_type)
-  acc_ens = tf.expand_dims(o_ens[0], axis=1) # tf.zeros([top_ks[-1], 0], int_type)
-  _, _, acc_log_probs, acc_ens = tf.while_loop(compute_ens_cond, compute_ens_body, [tf.constant(1, int_type), seq_len, acc_log_probs, acc_ens], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([top_ks[-1]]), tf.TensorShape([top_ks[-1], None])], parallel_iterations=1)
-  return acc_ens
+
+
+
   
   
 
