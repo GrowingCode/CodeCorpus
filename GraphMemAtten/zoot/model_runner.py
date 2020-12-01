@@ -5,7 +5,7 @@ import time
 from inputs.read_tfxl_data import generate_parsed_dataset
 from meta_info.hyper_parameter import compute_beam,\
   train_tfxl_tfrecord, origin_train_file, test_tfxl_tfrecord,\
-  origin_test_file, compute_multi_infer
+  origin_test_file, compute_multi_infer, compute_standard_infer
 from meta_info.non_hyper_constant import model_storage_dir, model_storage_parent_dir, meta_dir, turn_info, \
   model_check_point, turn_summary, best_info, best_summary, model_best, model_config, \
   restrain_maximum_count, max_train_epoch, standard_infer_train, \
@@ -462,10 +462,11 @@ if __name__ == '__main__':
     generate_tfxl_record(origin_test_file, test_tfxl_tfrecord)
   
   mr = ModelRunner()
-  mr.train_and_test(standard_infer)
-  mr.restore_best(standard_infer)
-  if compute_beam:
-    mr.test_beam(standard_infer)
+  if compute_standard_infer:
+    mr.train_and_test(standard_infer)
+    mr.restore_best(standard_infer)
+    if compute_beam:
+      mr.test_beam(standard_infer)
   
   if compute_multi_infer:
     mr.train_and_test(multi_infer)
