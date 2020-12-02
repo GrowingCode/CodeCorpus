@@ -81,7 +81,7 @@ class OneSeqBeam():
       
       token_mems_end = token_last_before_index - 1 + origin_mems_len
       token_mems_start = tf.maximum(token_mems_end - oracle_test_mem_len + 1, 0)
-      print("token_mems_start:" + str(token_mems_start) + "#token_mems_end:" + str(token_mems_end))
+#       print("token_mems_start:" + str(token_mems_start) + "#token_mems_end:" + str(token_mems_end))
       token_mems_before_last = []
       for j in range(n_layer):
         token_mems_before_last.append(tf.slice(all_mems[j], [token_mems_start, 0, 0], [token_mems_end-token_mems_start+1, -1, -1]))
@@ -112,7 +112,7 @@ class OneSeqBeam():
       inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, tf.shape(part_seq)[0])
     else:
       assert False
-    print("inferred_ens:" + str(inferred_ens) + "#last_token_before_part_seq:" + str(last_token_before_part_seq) + "#part_seq:" + str(part_seq))
+#     print("inferred_ens:" + str(inferred_ens) + "#last_token_before_part_seq:" + str(last_token_before_part_seq) + "#part_seq:" + str(part_seq))
     f_each_acc, f_whole_acc, f_count = compute_accuracy_of_sequences(inferred_ens, part_seq, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
     return f_each_acc, f_whole_acc, f_count
   
