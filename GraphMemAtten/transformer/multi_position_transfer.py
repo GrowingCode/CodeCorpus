@@ -1,16 +1,51 @@
 import tensorflow as tf
-from meta_info.hyper_parameter import multi_infer_num, d_embed
+from meta_info.hyper_parameter import multi_infer_num, d_embed,\
+  multi_position_transfer_layer
 from utils.initialize_util import random_normal_variable_initializer
 
 
 class MultiPositionTransfer(tf.keras.Model):
   
   def __init__(self):
-    super(MultiPositionTransfer, self).__init__()
+    self.t_layers = []
+    for _ in range(multi_position_transfer_layer):
+      self.t_layers.append(MultiPositionTransferLayer())
+  
+  def transfer(self, positions, outputs):
+    r_outputs = outputs
+    for i in range(multi_position_transfer_layer):
+      r_outputs = self.t_layers[i].transfer(positions, r_outputs)
+    return r_outputs
+  
+  
+class MultiPositionTransferLayer(tf.keras.Model):
+  
+  def __init__(self):
+    super(MultiPositionTransferLayer, self).__init__()
+    self.self_forget_fs = LinearTransferFeatures()
+    self.logit_fs = LinearTransferFeatures()
+    self.logit_forget_fs = LinearTransferFeatures()
+    self.out_forget_fs = LinearTransferFeatures()
+    
+  def transfer(self, positions, outputs):
+    self_forget = self.self_forget_fs.linear(positions, outputs)
+    logit = self.logit_fs.linear(positions, outputs)
+    logit_forget = self.logit_forget_fs.linear(positions, outputs)
+    out_forget = self.out_forget_fs.linear(positions, outputs)
+    new_c = (outputs * tf.nn.sigmoid(self_forget) + 
+             tf.nn.tanh(logit) * tf.nn.sigmoid(logit_forget))
+    new_res = tf.nn.tanh(new_c) * tf.nn.sigmoid(out_forget)
+    return new_res
+    
+    
+class LinearTransferFeatures(tf.keras.Model):
+  
+  def __init__(self):
+    super(LinearTransferFeatures, self).__init__()
     self.multi_transfer_w = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, d_embed, d_embed]))
     self.multi_transfer_b = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, d_embed]))
     
-  def transfer(self, positions, outputs):
+  def linear(self, positions, outputs):
     ''' outputs shape: [target_length, batch_size, feature_size] '''
     ''' positions shape: [target_length, batch_size] '''
     ''' positions need to transfer to positions embedding '''
@@ -22,6 +57,15 @@ class MultiPositionTransfer(tf.keras.Model):
     transferred_outputs = transferred_outputs + positions_b_embedding
     ''' transferred_outputs shape: [target_length, batch_size, feature_size] '''
     return transferred_outputs
+    
+    
+    
+  
+  
+  
+  
+  
+  
   
   
 

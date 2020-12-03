@@ -20,6 +20,8 @@ learning_rate=0.00025
 multi_infer_num = 25
 batch_size = 10
 
+multi_position_transfer_layer = 3
+
 untie_r = 0
 
 accuracy_based_on_whole = 1
