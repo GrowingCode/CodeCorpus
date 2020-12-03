@@ -1,12 +1,13 @@
 import tensorflow as tf
 from meta_info.hyper_parameter import multi_infer_num, d_embed,\
-  multi_position_transfer_layer
+  multi_position_transfer_layer, use_simple_multi_infer_mode
 from utils.initialize_util import random_normal_variable_initializer
 
 
 class MultiPositionTransfer(tf.keras.Model):
   
   def __init__(self):
+    super(MultiPositionTransfer, self).__init__()
     self.t_layers = []
     for _ in range(multi_position_transfer_layer):
       self.t_layers.append(MultiPositionTransferLayer())
@@ -22,19 +23,25 @@ class MultiPositionTransferLayer(tf.keras.Model):
   
   def __init__(self):
     super(MultiPositionTransferLayer, self).__init__()
-    self.self_forget_fs = LinearTransferFeatures()
-    self.logit_fs = LinearTransferFeatures()
-    self.logit_forget_fs = LinearTransferFeatures()
-    self.out_forget_fs = LinearTransferFeatures()
+    if use_simple_multi_infer_mode:
+      self.out_fs = LinearTransferFeatures()
+    else:
+      self.self_forget_fs = LinearTransferFeatures()
+      self.logit_fs = LinearTransferFeatures()
+      self.logit_forget_fs = LinearTransferFeatures()
+      self.out_forget_fs = LinearTransferFeatures()
     
   def transfer(self, positions, outputs):
-    self_forget = self.self_forget_fs.linear(positions, outputs)
-    logit = self.logit_fs.linear(positions, outputs)
-    logit_forget = self.logit_forget_fs.linear(positions, outputs)
-    out_forget = self.out_forget_fs.linear(positions, outputs)
-    new_c = (outputs * tf.nn.sigmoid(self_forget) + 
-             tf.nn.tanh(logit) * tf.nn.sigmoid(logit_forget))
-    new_res = tf.nn.tanh(new_c) * tf.nn.sigmoid(out_forget)
+    if use_simple_multi_infer_mode:
+      new_res = self.out_fs.linear(positions, outputs)
+    else:
+      self_forget = self.self_forget_fs.linear(positions, outputs)
+      logit = self.logit_fs.linear(positions, outputs)
+      logit_forget = self.logit_forget_fs.linear(positions, outputs)
+      out_forget = self.out_forget_fs.linear(positions, outputs)
+      new_res = (outputs * tf.nn.sigmoid(self_forget) + 
+               tf.nn.tanh(logit) * tf.nn.sigmoid(logit_forget))
+      new_res = tf.nn.tanh(new_res) * tf.nn.sigmoid(out_forget)
     return new_res
     
     

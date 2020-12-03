@@ -20,7 +20,7 @@ learning_rate=0.00025
 multi_infer_num = 25
 batch_size = 10
 
-multi_position_transfer_layer = 3
+multi_position_transfer_layer = 1
 
 untie_r = 0
 
@@ -38,6 +38,8 @@ initial_memory_trainable = 0
 compute_standard_infer = 1
 compute_multi_infer = 1
 compute_beam = 1
+
+use_simple_multi_infer_mode = 0
 # run_decode_info = standard_infer
 skeleton_mode = skeleton_pe
 
