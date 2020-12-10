@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
+import json
 
 
 standard_infer = "standard_infer"
@@ -77,6 +78,13 @@ accuracy_non_skt_token_filter = 1
 
 debug_beam_handle_only_one_first_batch = 0
 debug_beam_handle_only_one_first_example_in_batch = 0
+
+''' initialize project_size '''
+meta_of_app_handle_file = open(meta_dir + "/meta_of_app_handle.json", 'r', encoding='UTF-8')
+meta_of_app_handle_ts = json.load(meta_of_app_handle_file)
+meta_of_app_handle_file.close()
+project_size = meta_of_app_handle_ts["ProjectSize"]
+
 
 
 

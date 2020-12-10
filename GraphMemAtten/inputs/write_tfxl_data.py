@@ -1,10 +1,11 @@
-import tensorflow as tf
-import os
-import numpy as np
-from meta_info.non_hyper_constant import np_int_type
-from meta_info.hyper_parameter import batch_size, train_tfxl_tfrecord,\
-  origin_train_file, test_tfxl_tfrecord, origin_test_file
 from builtins import len
+import os
+
+from meta_info.hyper_parameter import batch_size, train_tfxl_tfrecord, \
+  origin_train_file, test_tfxl_tfrecord, origin_test_file
+from meta_info.non_hyper_constant import np_int_type, project_size
+import numpy as np
+import tensorflow as tf
 
 
 def generate_tfxl_record(origin_filepath, record_filepath):
@@ -15,6 +16,9 @@ def generate_tfxl_record(origin_filepath, record_filepath):
   examples = []
   example_max_ele_size = 0
   
+  prev_length = -1
+  descend = 0
+  
   for line in open(origin_filepath, 'r'):
     one_example = line.strip()
     origin_sequence, relative_to_part_first, valid_mask, seq_part_skip, token_type = one_example.split("#")
@@ -24,6 +28,10 @@ def generate_tfxl_record(origin_filepath, record_filepath):
     int_seq_part_skip = [int(id_str) for id_str in seq_part_skip.split()]
     int_token_type = [int(id_str) for id_str in token_type.split()]
     examples.append((int_origin_sequence, int_relative_to_part_first, int_valid_mask, int_seq_part_skip, int_token_type))
+    
+    curr_length = len(int_origin_sequence)
+    if curr_length < prev_length:
+      descend = descend + 1
     
     assert len(int_origin_sequence) == len(int_relative_to_part_first)
     assert len(int_relative_to_part_first) == len(int_valid_mask)
@@ -38,6 +46,10 @@ def generate_tfxl_record(origin_filepath, record_filepath):
       example_max_ele_size = 0
       examples.clear()
       
+    prev_length = curr_length
+    
+  assert descend == project_size - 1
+  
   if len(examples) > 0:
     handle_examples(examples, example_max_ele_size, writer)
     example_max_ele_size = 0
