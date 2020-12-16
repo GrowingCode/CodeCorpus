@@ -120,9 +120,10 @@ class OneSeqBeam():
     ''' last_token shape: [1, 1] '''
     ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
     ''' here mems_before_last shape should be extended to [n_layer memory_length batch_size feature_size] '''
+    r_steps = tf.cast(tf.minimum(multi_infer_num, steps), int_type)
     
     def infer_cond(i, *_):
-      return tf.less(i, steps)
+      return tf.less(i, r_steps)
     
     def infer_body(i, probs, ens, l_token, *mems_tuple):
       ''' in the following, batch_size should be top_ks[-1]]] '''
