@@ -7,7 +7,7 @@ from meta_info.non_hyper_constant import int_type, float_type, top_ks, \
   all_skt_pe_to_each_base, all_skt_pe_to_each_end, all_skt_pe_to_each_start
 import tensorflow as tf
 from utils.accuracy_util import compute_accuracy_of_sequences,\
-  compute_unit_expand_accuracy_of_sequences
+  compute_skt_unit_expand_accuracy_of_sequences
 from utils.cartesian_util import batch_cartesian_add_each_scalar_in_vect, \
   batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect
 from utils.dynamic_program_util import dp_compute_en_seqs_from_distinct_parallel_tokens
@@ -130,9 +130,9 @@ class OneSeqBeam():
       if skeleton_mode == skeleton_e:
         skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_accuracy_of_sequences(inferred_ens, part_seq, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
       elif skeleton_mode == skeleton_pe:
-        skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_unit_expand_accuracy_of_sequences(all_skt_pe_to_each_base, all_skt_pe_to_each_start, all_skt_pe_to_each_end, inferred_ens, part_seq, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
+        skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_skt_unit_expand_accuracy_of_sequences(all_skt_pe_to_each_base, all_skt_pe_to_each_start, all_skt_pe_to_each_end, inferred_ens, part_seq, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
       elif skeleton_mode == skeleton_one:
-        skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_unit_expand_accuracy_of_sequences(all_skt_one_to_each_base, all_skt_one_to_each_start, all_skt_one_to_each_end, inferred_ens, part_seq, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
+        skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_skt_unit_expand_accuracy_of_sequences(all_skt_one_to_each_base, all_skt_one_to_each_start, all_skt_one_to_each_end, inferred_ens, part_seq, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
       else:
         assert False
       token_f_each_acc, token_f_whole_acc, token_f_count = tf.constant(0, float_type), tf.constant(0, float_type), tf.constant(0, int_type)

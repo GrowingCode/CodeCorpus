@@ -3,13 +3,14 @@ from meta_info.non_hyper_constant import float_type, int_type, top_ks,\
   top_ks_tensors
 import numpy as np
 from builtins import len
+from meta_info.hyper_parameter import n_skt
 
 
-def compute_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_start, unit_expand_end, raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, compute_one_whole=True):
+def compute_skt_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_start, unit_expand_end, raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, compute_one_whole=True):
 #   print("tf.shape(raw_computed_en_seqs):" + str(tf.shape(raw_computed_en_seqs)))
 #   print("tf.shape(raw_oracle_computed_en_seq):" + str(tf.shape(raw_oracle_computed_en_seq)))
 #   print("tf.shape(oracle_valid_mask):" + str(tf.shape(oracle_valid_mask)))
-  tf_seq_list = raw_computed_en_seqs.unstack()
+  tf_seq_list = tf.unstack(raw_computed_en_seqs)
   np_seq_list = [tf_seq.numpy() for tf_seq in tf_seq_list]
   l_size = len(np_seq_list)
   
@@ -55,12 +56,12 @@ def compute_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_star
       for j in range(r_size):
         
         if np_oracle_valid_mask[j]:
-          assert oracle_en > 2
           infer_en = nsl[j]
           assert infer_en > 2
-          infer_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, infer_en)
-          pos_acc = compare_two_sequences(infer_seq, oracle_unit_expand_seq_list[j])
-          temp_pos_accurate_count += pos_acc
+          if infer_en < n_skt:
+            infer_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, infer_en)
+            pos_acc = compare_two_sequences(infer_seq, oracle_unit_expand_seq_list[j])
+            temp_pos_accurate_count += pos_acc
       
       assert temp_pos_accurate_count <= oracle_sub_unit_size
       
@@ -83,7 +84,7 @@ def compute_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_star
 #   assert len(top_ks) == len(f_each_acc)
 #   assert len(top_ks) == len(f_whole_acc)
   
-  return tf.convert_to_tensor(f_each_acc), tf.convert_to_tensor(f_whole_acc), tf.convert_to_tensor(f_count)
+  return tf.convert_to_tensor(f_each_acc, float_type), tf.convert_to_tensor(f_whole_acc, float_type), tf.convert_to_tensor(f_count, int_type)
 
 
 def get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, en):
