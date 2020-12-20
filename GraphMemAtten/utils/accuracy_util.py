@@ -24,45 +24,64 @@ def compute_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_star
   max_whole_right = 0
   
   tpk_idx = 0
-  f_each_acc = []
-  f_whole_acc = []
-  f_count = -1
+  f_each_acc = [0 for _ in top_ks]
+  f_whole_acc = [0 for _ in top_ks]
+  f_count = 0
   
-  for i in range(l_size):
-    nsl = np_seq_list[i]
-    temp_pos_accurate_count = 0
-    temp_pos_sub_unit_size = 0
-    
-    for j in range(r_size):
-      if np_oracle_valid_mask[j]:
-        infer_en = nsl[j]
-        oracle_en = np_oracle_en_seq[j]
-        infer_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, infer_en)
-        oracle_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, oracle_en)
-        pos_acc, pos_sub_unit_size = compare_two_sequences(infer_seq, oracle_seq)
-        temp_pos_accurate_count += pos_acc
-        temp_pos_sub_unit_size += pos_sub_unit_size
-    
+  oracle_unit_expand_seq_list = []
+  oracle_sub_unit_size = 0
+  
+  for k in range(r_size):
+    oracle_en = np_oracle_en_seq[k]
+    if np_oracle_valid_mask[k]:
+      assert oracle_en > 2
+      oracle_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, oracle_en)
+      oracle_unit_expand_seq_list.append(oracle_seq)
+      oracle_sub_unit_size += np.size(oracle_seq)
+    else:
+      assert oracle_en <= 2
+      oracle_unit_expand_seq_list.append(None)
+  
+  if oracle_sub_unit_size > 0:
     if compute_one_whole:
-      epos_right = temp_pos_accurate_count / temp_pos_sub_unit_size
-      whole_right = float(temp_pos_accurate_count == temp_pos_sub_unit_size)
       f_count = 1
     else:
-      epos_right = temp_pos_accurate_count
-      whole_right = float(temp_pos_accurate_count == temp_pos_sub_unit_size) * temp_pos_sub_unit_size
-      f_count = temp_pos_sub_unit_size
+      f_count = oracle_sub_unit_size
     
-    max_epos_right = max(max_epos_right, epos_right)
-    max_whole_right = max(max_whole_right, whole_right)
+    for i in range(l_size):
+      nsl = np_seq_list[i]
+      temp_pos_accurate_count = 0
+      
+      for j in range(r_size):
+        
+        if np_oracle_valid_mask[j]:
+          assert oracle_en > 2
+          infer_en = nsl[j]
+          assert infer_en > 2
+          infer_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, infer_en)
+          pos_acc = compare_two_sequences(infer_seq, oracle_unit_expand_seq_list[j])
+          temp_pos_accurate_count += pos_acc
+      
+      assert temp_pos_accurate_count <= oracle_sub_unit_size
+      
+      if compute_one_whole:
+        epos_right = temp_pos_accurate_count / oracle_sub_unit_size
+        whole_right = float(temp_pos_accurate_count == oracle_sub_unit_size)
+      else:
+        epos_right = temp_pos_accurate_count
+        whole_right = float(temp_pos_accurate_count == oracle_sub_unit_size) * oracle_sub_unit_size
+      
+      max_epos_right = max(max_epos_right, epos_right)
+      max_whole_right = max(max_whole_right, whole_right)
+      
+      assert tpk_idx < len(top_ks)
+      if i == top_ks[tpk_idx]:
+        f_each_acc[tpk_idx] += max_epos_right
+        f_whole_acc[tpk_idx] += max_whole_right
+        tpk_idx = tpk_idx + 1
     
-    assert tpk_idx < len(top_ks)
-    if i == top_ks[tpk_idx]:
-      f_each_acc.append(max_epos_right)
-      f_whole_acc.append(max_whole_right)
-      tpk_idx = tpk_idx + 1
-  
-  assert len(top_ks) == len(f_each_acc)
-  assert len(top_ks) == len(f_whole_acc)
+#   assert len(top_ks) == len(f_each_acc)
+#   assert len(top_ks) == len(f_whole_acc)
   
   return tf.convert_to_tensor(f_each_acc), tf.convert_to_tensor(f_whole_acc), tf.convert_to_tensor(f_count)
 
@@ -81,7 +100,7 @@ def compare_two_sequences(infer_seq, oracle_seq):
   for i in range(i_len):
     if infer_seq[i] == oracle_seq[i]:
       acc_count = acc_count + 1
-  return acc_count, size
+  return acc_count
 
 
 def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, compute_one_whole=True):
