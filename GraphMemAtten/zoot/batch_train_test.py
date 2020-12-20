@@ -103,24 +103,30 @@ class BatchTrainTest(tf.keras.Model):
 #     numpy_batch_token_accuracy = [one_token_accuracy.numpy() for one_token_accuracy in batch_token_accuracy]
     return batch_token_loss.numpy(), batch_token_accuracy.numpy(), batch_token_count.numpy()
   
-  def batch_test_beam(self, origin_sequence, valid_mask, seq_part_skip, decode_mode):
+  def batch_test_beam(self, origin_sequence, valid_mask, seq_part_skip, token_type, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''
     ''' steps: split origin_sequence to each sequence '''
     sequences = tf.unstack(origin_sequence, axis=1)
     valid_masks = tf.unstack(valid_mask, axis=1)
     part_skips = tf.unstack(seq_part_skip, axis=1)
+    pt_types = tf.unstack(token_type, axis=1)
+    batch_skt_each_acc, batch_skt_whole_acc, batch_skt_count = tf.zeros([len(top_ks)], float_type), tf.zeros([len(top_ks)], float_type), tf.constant(0, int_type)
     batch_token_each_acc, batch_token_whole_acc, batch_token_count = tf.zeros([len(top_ks)], float_type), tf.zeros([len(top_ks)], float_type), tf.constant(0, int_type)
     for i in range(len(sequences)):
       sequence = sequences[i]
       v_mask = valid_masks[i]
       part_skip = part_skips[i]
-      token_each_acc, token_whole_acc, token_count, _ = self.one_seq_beam(self.get_mems(1), sequence, v_mask, part_skip, decode_mode)
+      pt_type = pt_types[i]
+      skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count, _ = self.one_seq_beam(self.get_mems(1), sequence, v_mask, part_skip, pt_type, decode_mode)
+      batch_skt_each_acc += skt_each_acc
+      batch_skt_whole_acc += skt_whole_acc
+      batch_skt_count += skt_count
       batch_token_each_acc += token_each_acc
       batch_token_whole_acc += token_whole_acc
       batch_token_count += token_count
       if debug_beam_handle_only_one_first_example_in_batch:
         break
-    return batch_token_each_acc.numpy(), batch_token_whole_acc.numpy(), batch_token_count.numpy()
+    return batch_skt_each_acc.numpy(), batch_skt_whole_acc.numpy(), batch_skt_count.numpy(), batch_token_each_acc.numpy(), batch_token_whole_acc.numpy(), batch_token_count.numpy()
   
   def get_mems(self, batch_size):
     if initial_memory_trainable:

@@ -85,6 +85,27 @@ meta_of_app_handle_ts = json.load(meta_of_app_handle_file)
 meta_of_app_handle_file.close()
 project_size = meta_of_app_handle_ts["ProjectSize"]
 
+all_skt_one_to_each_file = open(data_dir + "/All_skt_one_to_each.json", 'r', encoding='UTF-8')
+all_skt_one_to_each_ts = json.load(all_skt_one_to_each_file)
+all_skt_one_to_each_file.close()
+all_skt_one_to_each_base = np.array(all_skt_one_to_each_ts[0])
+all_skt_one_to_each_start = np.array(all_skt_one_to_each_ts[1])
+all_skt_one_to_each_end = np.array(all_skt_one_to_each_ts[2])
+
+all_skt_one_to_pe_file = open(data_dir + "/All_skt_one_to_pe.json", 'r', encoding='UTF-8')
+all_skt_one_to_pe_ts = json.load(all_skt_one_to_pe_file)
+all_skt_one_to_pe_file.close()
+all_skt_one_to_pe_base = np.array(all_skt_one_to_pe_ts[0])
+all_skt_one_to_pe_start = np.array(all_skt_one_to_pe_ts[1])
+all_skt_one_to_pe_end = np.array(all_skt_one_to_pe_ts[2])
+
+all_skt_pe_to_each_file = open(data_dir + "/All_skt_pe_to_each.json", 'r', encoding='UTF-8')
+all_skt_pe_to_each_ts = json.load(all_skt_pe_to_each_file)
+all_skt_pe_to_each_file.close()
+all_skt_pe_to_each_base = np.array(all_skt_pe_to_each_ts[0])
+all_skt_pe_to_each_start = np.array(all_skt_pe_to_each_ts[1])
+all_skt_pe_to_each_end = np.array(all_skt_pe_to_each_ts[2])
+
 
 
 

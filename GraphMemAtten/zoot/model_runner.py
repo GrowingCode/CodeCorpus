@@ -317,6 +317,9 @@ def model_running(model, ds, decode_mode):
   
   
 def beam_model_running(model, ds, decode_mode):
+  all_skt_each_acc = 0
+  all_skt_whole_accuracy = 0
+  all_skt_count = 0
   all_token_each_acc = 0
   all_token_whole_accuracy = 0
   all_token_count = 0
@@ -330,7 +333,10 @@ def beam_model_running(model, ds, decode_mode):
   if debug_beam_handle_only_one_first_batch:
     r_ds = ds.take(1)
   for next_element in r_ds:
-    batch_token_each_acc, batch_token_whole_acc, batch_token_count = model.batch_test_beam(next_element['origin_sequence'], next_element['valid_mask'], next_element['seq_part_skip'], decode_mode)
+    batch_skt_each_acc, batch_skt_whole_acc, batch_skt_count, batch_token_each_acc, batch_token_whole_acc, batch_token_count = model.batch_test_beam(next_element['origin_sequence'], next_element['valid_mask'], next_element['seq_part_skip'], next_element['token_type'], decode_mode)
+    all_skt_each_acc += batch_skt_each_acc
+    all_skt_whole_accuracy += batch_skt_whole_acc
+    all_skt_count += batch_skt_count
     all_token_each_acc += batch_token_each_acc
     all_token_whole_accuracy += batch_token_whole_acc
     all_token_count += batch_token_count
@@ -341,7 +347,7 @@ def beam_model_running(model, ds, decode_mode):
     i+=1
   end_time = time.time()
   print("mode:" + str(decode_mode) + "#batch_size:" + str(i) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
-  return {'token_each_acc':all_token_each_acc, 'token_whole_accuracy':all_token_whole_accuracy, 'token_count':all_token_count}
+  return {'skt_each_acc':all_skt_each_acc, 'skt_whole_accuracy':all_skt_whole_accuracy, 'skt_count':all_skt_count, 'token_each_acc':all_token_each_acc, 'token_whole_accuracy':all_token_whole_accuracy, 'token_count':all_token_count}
 
 
 #   def model_running_one_example(self, training, one_example):
