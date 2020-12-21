@@ -17,6 +17,8 @@ class MultiDecodeModel(tf.keras.Model):
 #     relative_to_part_first = tf.zeros_like(relative_to_part_first)
     
     target_length = tf.shape(target)[0]
+    b_size = tf.shape(target)[1]
+#     assert b_size.numpy() <= batch_size
     '''
     dec_inp shape:[target_length, batch_size]
     target shape: [target_length, batch_size]
@@ -28,7 +30,7 @@ class MultiDecodeModel(tf.keras.Model):
     new_all_outputs = tf.concat([all_outputs, outputs], axis=0)
     
     all_o_length = tf.shape(new_all_outputs)[0]
-    outs_positions = tf.tile(tf.expand_dims(tf.range(target_length), axis=1), [1, 6]) - target_length - relative_to_part_first + all_o_length
+    outs_positions = tf.tile(tf.expand_dims(tf.range(target_length), axis=1), [1, b_size]) - target_length - relative_to_part_first + all_o_length
     used_outputs = batch_gather(new_all_outputs, outs_positions)
 #     used_outputs = tf.gather_nd(params=new_all_outputs, indices=outs_positions)
     

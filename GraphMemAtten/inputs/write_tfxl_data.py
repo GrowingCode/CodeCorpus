@@ -63,6 +63,7 @@ def pad_vector_to_specified_length(vect, length):
   
   
 def handle_examples(examples, example_max_ele_size, writer):
+  assert len(examples) <= batch_size
   np_batch_origin_sequence = np.zeros([example_max_ele_size, 0], np_int_type)
   np_batch_relative_to_part_first = np.zeros([example_max_ele_size, 0], np_int_type)
   np_batch_valid_mask = np.zeros([example_max_ele_size, 0], np_int_type)
