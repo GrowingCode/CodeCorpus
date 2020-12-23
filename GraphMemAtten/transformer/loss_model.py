@@ -16,7 +16,7 @@ class LossCalculator(tf.keras.Model):
     self.token_output_softmax_b = tf.Variable(zero_variable_initializer([n_token]))
   
   # return_mean=True
-  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, compute_prediction):
+  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, compute_prediction, train_to_predict_unk):
   
     output = generate_logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
     
@@ -28,7 +28,10 @@ class LossCalculator(tf.keras.Model):
     ''' ['tf.shape(output):', [128 6 27]] '''
     ''' ['tf.shape(nll):', [128 6]] '''
 #     print("valid_mask:" + str(valid_mask))
-    r_nll = tf.where(tf.equal(valid_mask, 1), nll, tf.zeros_like(nll))
+    if train_to_predict_unk:
+      r_nll = nll
+    else:
+      r_nll = tf.where(tf.equal(valid_mask, 1), nll, tf.zeros_like(nll))
 #     r_nll = nll * tf.cast(valid_mask, float_type)
     
 #     if return_mean:

@@ -24,6 +24,8 @@ multi_position_transfer_layer = 1
 
 untie_r = 0
 
+standard_infer_train_to_predict_unk = 0
+multi_infer_train_to_predict_unk = 0
 accuracy_based_on_whole = 1
 # '''
 # token type:

@@ -1,6 +1,7 @@
 import tensorflow as tf
 from transformer.loss_model import LossCalculator
 from utils.batch_gather_util import batch_gather
+from meta_info.hyper_parameter import multi_infer_train_to_predict_unk
 
 
 class MultiDecodeModel(tf.keras.Model):
@@ -37,7 +38,7 @@ class MultiDecodeModel(tf.keras.Model):
     ''' used_outputs shape: [target_length batch_size feature_size] '''
 #     transferred_outputs = used_outputs
     transferred_outputs = self.multi_position_transfer.transfer(relative_to_part_first, used_outputs)
-    probs, predictions, loss = self.loss_calculator.mask_adaptive_logsoftmax(transferred_outputs, target, valid_mask, is_training == False)
+    probs, predictions, loss = self.loss_calculator.mask_adaptive_logsoftmax(transferred_outputs, target, valid_mask, is_training == False, multi_infer_train_to_predict_unk)
 #     probs, predictions, loss = self.multi_loss_calculator.mask_adaptive_logsoftmax(transferred_outputs, target, relative_to_part_first, valid_mask, is_training == False)
     
     return new_all_outputs, probs, predictions, loss, new_mems

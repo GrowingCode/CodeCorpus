@@ -1,7 +1,7 @@
 import tensorflow as tf
 from meta_info.hyper_parameter import d_head, n_head, n_layer,\
   d_embed, d_model, n_token, dropout, d_inner, dropatt, oracle_mem_len,\
-  untie_r
+  untie_r, standard_infer_train_to_predict_unk
 from meta_info.non_hyper_constant import normal_initializer
 from utils.initialize_util import random_normal_variable_initializer
 from transformer.loss_model import LossCalculator
@@ -182,7 +182,8 @@ class Transformer(tf.keras.Model):
         hidden=output,
         target=target,
         valid_mask=valid_mask,
-        compute_prediction=(is_training == False))
+        compute_prediction=(is_training == False),
+        standard_infer_train_to_predict_unk)
     
     return output, probs, predictions, loss, new_mems
   
