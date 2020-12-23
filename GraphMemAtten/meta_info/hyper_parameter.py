@@ -17,8 +17,9 @@ d_inner = 512
 dropout = 0.1
 dropatt = 0.0
 learning_rate=0.00025
-multi_infer_num = 25
 batch_size = 10
+
+multi_infer_num = 50
 
 multi_position_transfer_layer = 1
 
@@ -43,7 +44,7 @@ compute_beam = 1
 
 use_simple_multi_infer_mode = 0
 # run_decode_info = standard_infer
-skeleton_mode = skeleton_pe
+skeleton_mode = skeleton_one
 
 origin_train_file = data_dir + "/" + skeleton_mode + "_train_data.txt"
 train_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_train_tfxl.tfrecord"
