@@ -104,7 +104,7 @@ def compare_two_sequences(infer_seq, oracle_seq):
   return acc_count
 
 
-def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, compute_one_whole=True):
+def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, n_base=0, compute_one_whole=True):
 #   print("tf.shape(raw_computed_en_seqs):" + str(tf.shape(raw_computed_en_seqs)))
 #   print("tf.shape(raw_oracle_computed_en_seq):" + str(tf.shape(raw_oracle_computed_en_seq)))
 #   print("tf.shape(oracle_valid_mask):" + str(tf.shape(oracle_valid_mask)))
@@ -133,11 +133,11 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
   for k in range(r_size):
     oracle_en = np_oracle_en_seq[k]
     if np_oracle_valid_mask[k]:
-      assert oracle_en > 2 + n_skt
+      assert oracle_en > 2 + n_base
       oracle_unit_expand_seq_list.append(oracle_en)
       oracle_sub_unit_size += 1
     else:
-      assert n_skt <= oracle_en and oracle_en <= 2 + n_skt, "wrong oracle_en:" + str(oracle_en) + "#n_skt:" + str(n_skt)
+      assert n_base <= oracle_en and oracle_en <= 2 + n_base, "wrong oracle_en:" + str(oracle_en) + "#n_base:" + str(n_base)
       oracle_unit_expand_seq_list.append(None)
   
   if oracle_sub_unit_size > 0:
@@ -154,9 +154,9 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
         if np_oracle_valid_mask[j]:
           infer_en = nsl[j]
 #           assert infer_en > 2
-          if infer_en < n_skt:
-            pos_acc = (1 if infer_en == oracle_unit_expand_seq_list[j] else 0);
-            temp_pos_accurate_count += pos_acc
+#           if infer_en < n_skt:
+          pos_acc = (1 if infer_en == oracle_unit_expand_seq_list[j] else 0);
+          temp_pos_accurate_count += pos_acc
       
       assert temp_pos_accurate_count <= oracle_sub_unit_size
       

@@ -1,6 +1,6 @@
 from meta_info.hyper_parameter import oracle_mem_len, n_layer, \
   oracle_tgt_len, accuracy_based_on_whole, oracle_test_mem_len, multi_infer_num,\
-  skeleton_mode
+  skeleton_mode, n_skt
 from meta_info.non_hyper_constant import int_type, float_type, top_ks, \
   standard_infer_test, multi_infer_test, skeleton_one, skeleton_pe, skeleton_e,\
   all_skt_one_to_each_base, all_skt_one_to_each_end, all_skt_one_to_each_start,\
@@ -138,7 +138,7 @@ class OneSeqBeam():
       token_f_each_acc, token_f_whole_acc, token_f_count = tf.constant(0, float_type), tf.constant(0, float_type), tf.constant(0, int_type)
     if e1:
       skt_f_each_acc, skt_f_whole_acc, skt_f_count = tf.constant(0, float_type), tf.constant(0, float_type), tf.constant(0, int_type)
-      token_f_each_acc, token_f_whole_acc, token_f_count = compute_accuracy_of_sequences(inferred_ens, part_seq, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
+      token_f_each_acc, token_f_whole_acc, token_f_count = compute_accuracy_of_sequences(inferred_ens, part_seq, part_valid_mask, n_skt, compute_one_whole=accuracy_based_on_whole)
 #     print("inferred_ens:" + str(inferred_ens) + "#last_token_before_part_seq:" + str(last_token_before_part_seq) + "#part_seq:" + str(part_seq))
     return skt_f_each_acc, skt_f_whole_acc, skt_f_count, token_f_each_acc, token_f_whole_acc, token_f_count
   
