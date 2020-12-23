@@ -57,7 +57,7 @@ def compute_skt_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_
         
         if np_oracle_valid_mask[j]:
           infer_en = nsl[j]
-          assert infer_en > 2
+#           assert infer_en > 2
           if infer_en < n_skt:
             infer_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, infer_en)
             pos_acc = compare_two_sequences(infer_seq, oracle_unit_expand_seq_list[j])
@@ -153,7 +153,7 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
       for j in range(r_size):
         if np_oracle_valid_mask[j]:
           infer_en = nsl[j]
-          assert infer_en > 2
+#           assert infer_en > 2
           if infer_en < n_skt:
             pos_acc = (1 if infer_en == oracle_unit_expand_seq_list[j] else 0);
             temp_pos_accurate_count += pos_acc

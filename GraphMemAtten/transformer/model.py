@@ -183,7 +183,7 @@ class Transformer(tf.keras.Model):
         target=target,
         valid_mask=valid_mask,
         compute_prediction=(is_training == False),
-        standard_infer_train_to_predict_unk)
+        train_to_predict_unk=standard_infer_train_to_predict_unk)
     
     return output, probs, predictions, loss, new_mems
   
