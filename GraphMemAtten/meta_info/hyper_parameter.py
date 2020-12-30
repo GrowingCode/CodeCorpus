@@ -44,7 +44,7 @@ compute_beam = 1
 
 use_simple_multi_infer_mode = 0
 # run_decode_info = standard_infer
-skeleton_mode = skeleton_one
+skeleton_mode = skeleton_pe
 
 origin_train_file = data_dir + "/" + skeleton_mode + "_train_data.txt"
 train_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_train_tfxl.tfrecord"
