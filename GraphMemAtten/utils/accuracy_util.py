@@ -34,14 +34,14 @@ def compute_skt_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_
   
   for k in range(r_size):
     oracle_en = np_oracle_en_seq[k]
-    if np_oracle_valid_mask[k]:
-      assert oracle_en > 2
-      oracle_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, oracle_en)
-      oracle_unit_expand_seq_list.append(oracle_seq)
-      oracle_sub_unit_size += np.size(oracle_seq)
-    else:
-      assert oracle_en <= 2
-      oracle_unit_expand_seq_list.append(None)
+#     if np_oracle_valid_mask[k]:
+    assert oracle_en > 2
+    oracle_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, oracle_en)
+    oracle_unit_expand_seq_list.append(oracle_seq)
+    oracle_sub_unit_size += np.size(oracle_seq)
+#     else:
+#       assert oracle_en <= 2
+#       oracle_unit_expand_seq_list.append(None)
   
   if oracle_sub_unit_size > 0:
     if compute_one_whole:
@@ -90,6 +90,7 @@ def compute_skt_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_
 def get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, en):
   en_start = unit_expand_start[en]
   en_end = unit_expand_end[en]
+  assert en_end >= en_start
   seq = unit_expand_base[en_start:en_end+1]
   return seq
 
