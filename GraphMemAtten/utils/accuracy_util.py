@@ -114,6 +114,7 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
   
   np_oracle_en_seq = raw_oracle_computed_en_seq.numpy()
   np_oracle_valid_mask = oracle_valid_mask.numpy()
+#   np_oracle_seq_valid_number = oracle_seq_valid_number.numpy()
   
   infer_size = np.size(np_seq_list[0])
   oracle_size = np.size(np_oracle_en_seq)
@@ -139,6 +140,7 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
     else:
       assert n_base <= oracle_en and oracle_en <= 2 + n_base, "wrong oracle_en:" + str(oracle_en) + "#n_base:" + str(n_base)
       oracle_unit_expand_seq_list.append(None)
+#   assert np_oracle_seq_valid_number == oracle_sub_unit_size
   
   if oracle_sub_unit_size > 0:
     if compute_one_whole:

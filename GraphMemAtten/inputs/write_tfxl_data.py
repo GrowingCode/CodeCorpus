@@ -21,13 +21,14 @@ def generate_tfxl_record(origin_filepath, record_filepath):
   
   for line in open(origin_filepath, 'r'):
     one_example = line.strip()
-    origin_sequence, relative_to_part_first, valid_mask, seq_part_skip, token_type = one_example.split("#")
+    origin_sequence, relative_to_part_first, valid_mask, seq_part_skip, token_type, origin_sequence_exact = one_example.split("#")
     int_origin_sequence = [int(id_str) for id_str in origin_sequence.split()]
     int_relative_to_part_first = [int(id_str) for id_str in relative_to_part_first.split()]
     int_valid_mask = [int(id_str) for id_str in valid_mask.split()]
     int_seq_part_skip = [int(id_str) for id_str in seq_part_skip.split()]
     int_token_type = [int(id_str) for id_str in token_type.split()]
-    examples.append((int_origin_sequence, int_relative_to_part_first, int_valid_mask, int_seq_part_skip, int_token_type))
+    int_origin_sequence_exact = [int(id_str) for id_str in origin_sequence_exact.split()]
+    examples.append((int_origin_sequence, int_relative_to_part_first, int_valid_mask, int_seq_part_skip, int_token_type, int_origin_sequence_exact))
     
     curr_length = len(int_origin_sequence)
     if curr_length < prev_length:
@@ -37,6 +38,7 @@ def generate_tfxl_record(origin_filepath, record_filepath):
     assert len(int_relative_to_part_first) == len(int_valid_mask)
     assert len(int_valid_mask) == len(int_seq_part_skip)
     assert len(int_seq_part_skip) == len(int_token_type)
+    assert len(int_token_type) == len(int_origin_sequence_exact)
     
     if (example_max_ele_size < len(int_origin_sequence)):
       example_max_ele_size = len(int_origin_sequence)
@@ -69,6 +71,7 @@ def handle_examples(examples, example_max_ele_size, writer):
   np_batch_valid_mask = np.zeros([example_max_ele_size, 0], np_int_type)
   np_batch_seq_part_skip = np.zeros([example_max_ele_size, 0], np_int_type)
   np_batch_token_type = np.zeros([example_max_ele_size, 0], np_int_type)
+  np_batch_origin_sequence_exact = np.zeros([example_max_ele_size, 0], np_int_type)
   
   for example in examples:
     np_batch_origin_sequence = np.concatenate([np_batch_origin_sequence, np.expand_dims(pad_vector_to_specified_length(example[0], example_max_ele_size), axis=1)], axis=1)
@@ -76,6 +79,7 @@ def handle_examples(examples, example_max_ele_size, writer):
     np_batch_valid_mask = np.concatenate([np_batch_valid_mask, np.expand_dims(pad_vector_to_specified_length(example[2], example_max_ele_size), axis=1)], axis=1)
     np_batch_seq_part_skip = np.concatenate([np_batch_seq_part_skip, np.expand_dims(pad_vector_to_specified_length(example[3], example_max_ele_size), axis=1)], axis=1)
     np_batch_token_type = np.concatenate([np_batch_token_type, np.expand_dims(pad_vector_to_specified_length(example[4], example_max_ele_size), axis=1)], axis=1)
+    np_batch_origin_sequence_exact = np.concatenate([np_batch_origin_sequence_exact, np.expand_dims(pad_vector_to_specified_length(example[5], example_max_ele_size), axis=1)], axis=1)
     
   features={}
   features['origin_sequence'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=[np_batch_origin_sequence.reshape(-1).tostring()]))
@@ -88,6 +92,8 @@ def handle_examples(examples, example_max_ele_size, writer):
   features['seq_part_skip_shape'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=[np.asarray(np.shape(np_batch_seq_part_skip)).tostring()]))
   features['token_type'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=[np_batch_token_type.reshape(-1).tostring()]))
   features['token_type_shape'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=[np.asarray(np.shape(np_batch_token_type)).tostring()]))
+  features['origin_sequence_exact'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=[np_batch_origin_sequence_exact.reshape(-1).tostring()]))
+  features['origin_sequence_exact_shape'] = tf.train.Feature(bytes_list = tf.train.BytesList(value=[np.asarray(np.shape(np_batch_origin_sequence_exact)).tostring()]))
   
   tf_features = tf.train.Features(feature = features)
   tf_example = tf.train.Example(features = tf_features)

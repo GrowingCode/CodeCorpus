@@ -103,13 +103,14 @@ class BatchTrainTest(tf.keras.Model):
 #     numpy_batch_token_accuracy = [one_token_accuracy.numpy() for one_token_accuracy in batch_token_accuracy]
     return batch_token_loss.numpy(), batch_token_accuracy.numpy(), batch_token_count.numpy()
   
-  def batch_test_beam(self, origin_sequence, valid_mask, seq_part_skip, token_type, decode_mode):
+  def batch_test_beam(self, origin_sequence, valid_mask, seq_part_skip, token_type, origin_sequence_exact, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''
     ''' steps: split origin_sequence to each sequence '''
     sequences = tf.unstack(origin_sequence, axis=1)
     valid_masks = tf.unstack(valid_mask, axis=1)
     part_skips = tf.unstack(seq_part_skip, axis=1)
     pt_types = tf.unstack(token_type, axis=1)
+    sequence_exacts = tf.unstack(origin_sequence_exact, axis=1)
     batch_skt_each_acc, batch_skt_whole_acc, batch_skt_count = tf.zeros([len(top_ks)], float_type), tf.zeros([len(top_ks)], float_type), tf.constant(0, int_type)
     batch_token_each_acc, batch_token_whole_acc, batch_token_count = tf.zeros([len(top_ks)], float_type), tf.zeros([len(top_ks)], float_type), tf.constant(0, int_type)
     for i in range(len(sequences)):
@@ -117,7 +118,8 @@ class BatchTrainTest(tf.keras.Model):
       v_mask = valid_masks[i]
       part_skip = part_skips[i]
       pt_type = pt_types[i]
-      skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count, _ = self.one_seq_beam(self.get_mems(1), sequence, v_mask, part_skip, pt_type, decode_mode)
+      sequence_exact = sequence_exacts[i]
+      skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count, _ = self.one_seq_beam(self.get_mems(1), sequence, v_mask, part_skip, pt_type, sequence_exact, decode_mode)
       batch_skt_each_acc += skt_each_acc
       batch_skt_whole_acc += skt_whole_acc
       batch_skt_count += skt_count
