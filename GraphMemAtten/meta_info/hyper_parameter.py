@@ -27,7 +27,7 @@ untie_r = 0
 
 standard_infer_train_to_predict_unk = 0
 multi_infer_train_to_predict_unk = 0
-accuracy_based_on_whole = 1
+accuracy_based_on_whole = 0
 # '''
 # token type:
 # -1: all 
