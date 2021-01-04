@@ -37,8 +37,14 @@ def compute_skt_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_
 #     if np_oracle_valid_mask[k]:
     assert oracle_en > 2
     oracle_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, oracle_en)
-    oracle_unit_expand_seq_list.append(oracle_seq)
-    oracle_sub_unit_size += np.size(oracle_seq)
+    os_size = np.size(oracle_seq)
+    for i in range(os_size):
+      if oracle_seq[i] > 2:
+        oracle_unit_expand_seq_list.append(oracle_seq[i])
+        oracle_sub_unit_size += 1
+      else:
+        oracle_unit_expand_seq_list.append(None)
+    
 #     else:
 #       assert oracle_en <= 2
 #       oracle_unit_expand_seq_list.append(None)
