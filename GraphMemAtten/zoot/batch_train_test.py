@@ -63,22 +63,23 @@ class BatchTrainTest(tf.keras.Model):
       part_tgt_sequence = tgt_sequence[i:i_end,:]
       part_relative_to_part_first = r_relative_to_part_first[i:i_end,:]
       part_valid_mask = r_valid_mask[i:i_end,:]
-      if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
-        with tf.GradientTape() as tape:
-          if decode_mode == multi_infer_train:
-            all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, is_training=True)
-          elif decode_mode == standard_infer_train:
-            _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=True)
+      with tf.device("/gpu:0"):
+        if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
+            with tf.GradientTape() as tape:
+              if decode_mode == multi_infer_train:
+                all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, is_training=True)
+              elif decode_mode == standard_infer_train:
+                _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=True)
+              else:
+                assert False
+        else:
+          assert decode_mode == standard_infer_test or decode_mode == multi_infer_test
+          if decode_mode == multi_infer_test:
+            all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, is_training=False)
+          elif decode_mode == standard_infer_test:
+            _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=False)
           else:
             assert False
-      else:
-        assert decode_mode == standard_infer_test or decode_mode == multi_infer_test
-        if decode_mode == multi_infer_test:
-          all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, is_training=False)
-        elif decode_mode == standard_infer_test:
-          _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=False)
-        else:
-          assert False
 #       print("loss:" + str(loss))
       mems = new_mems
       i = i_end
@@ -86,20 +87,21 @@ class BatchTrainTest(tf.keras.Model):
       batch_token_loss += loss
       token_count = tf.reduce_sum(part_valid_mask)
       batch_token_count += token_count
-      if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
-        grads = tape.gradient(loss, self.trainable_variables)
-#         print(grads)
-        c_grads = [(tf.clip_by_value(grad, -gradient_clip_abs_range, gradient_clip_abs_range)) if grad != None else None for grad in grads]
-#         grads = clip_gradients(grads)
-        nc_grads = [grad if grad is not None else tf.zeros_like(var) for (grad, var) in zip(c_grads, self.trainable_variables)]
-        self.optimizer.apply_gradients(zip(nc_grads, self.trainable_variables))
-      elif decode_mode == standard_infer_test or decode_mode == multi_infer_test:
-        token_accuracy = compute_batch_top_ks_accuracy(predictions, part_tgt_sequence, part_valid_mask)
-#         for j in range(len(top_ks)):
-#           batch_token_accuracy[j] += token_accuracy[j]
-        batch_token_accuracy += token_accuracy
-      else:
-        assert False
+      with tf.device("/gpu:0"):
+        if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
+          grads = tape.gradient(loss, self.trainable_variables)
+  #         print(grads)
+          c_grads = [(tf.clip_by_value(grad, -gradient_clip_abs_range, gradient_clip_abs_range)) if grad != None else None for grad in grads]
+  #         grads = clip_gradients(grads)
+          nc_grads = [grad if grad is not None else tf.zeros_like(var) for (grad, var) in zip(c_grads, self.trainable_variables)]
+          self.optimizer.apply_gradients(zip(nc_grads, self.trainable_variables))
+        elif decode_mode == standard_infer_test or decode_mode == multi_infer_test:
+          token_accuracy = compute_batch_top_ks_accuracy(predictions, part_tgt_sequence, part_valid_mask)
+  #         for j in range(len(top_ks)):
+  #           batch_token_accuracy[j] += token_accuracy[j]
+          batch_token_accuracy += token_accuracy
+        else:
+          assert False
 #     numpy_batch_token_accuracy = [one_token_accuracy.numpy() for one_token_accuracy in batch_token_accuracy]
     return batch_token_loss.numpy(), batch_token_accuracy.numpy(), batch_token_count.numpy()
   

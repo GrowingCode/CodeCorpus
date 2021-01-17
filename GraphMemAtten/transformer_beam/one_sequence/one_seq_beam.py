@@ -50,7 +50,8 @@ class OneSeqBeam():
       
       return (idx + oracle_tgt_len, *new_all_mems)
     
-    _, *all_mems = tf.while_loop(mem_gen_cond, mem_gen_body, [tf.constant(0, int_type), *mems], parallel_iterations=1)
+    with tf.device('/gpu:0'):
+      _, *all_mems = tf.while_loop(mem_gen_cond, mem_gen_body, [tf.constant(0, int_type), *mems], parallel_iterations=1)
     
     def osb_cond(i, *_):
       i_valid = tf.cast(tf.less(i, seq_len), int_type)
@@ -120,12 +121,13 @@ class OneSeqBeam():
     part_seq_len = tf.shape(part_seq)[0]
     part_seq_exact_len = tf.shape(part_seq_exact)[0]
     assert part_seq_len == part_seq_exact_len
-    if decode_mode == standard_infer_test:
-      inferred_ens = self.infer(mems_before_last, last_token_before_part_seq, part_seq_len)
-    elif decode_mode == multi_infer_test:
-      inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, part_seq_len)
-    else:
-      assert False
+    with tf.device('/gpu:0'):
+      if decode_mode == standard_infer_test:
+        inferred_ens = self.infer(mems_before_last, last_token_before_part_seq, part_seq_len)
+      elif decode_mode == multi_infer_test:
+        inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, part_seq_len)
+      else:
+        assert False
     ptt_np = part_token_type.numpy()
     e0 = np.all(ptt_np == 0)
     e1 = np.all(ptt_np == 1)
