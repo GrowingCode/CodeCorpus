@@ -49,6 +49,8 @@ class LinearTransferFeatures(tf.keras.Model):
   
   def __init__(self):
     super(LinearTransferFeatures, self).__init__()
+#     self.multi_transfer_proj_a = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, d_embed, transfer_head]))
+#     self.multi_transfer_w = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, transfer_head, d_embed]))
     self.multi_transfer_w = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, d_embed, d_embed]))
     self.multi_transfer_b = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, d_embed]))
     
@@ -56,10 +58,13 @@ class LinearTransferFeatures(tf.keras.Model):
     ''' outputs shape: [target_length, batch_size, feature_size] '''
     ''' positions shape: [target_length, batch_size] '''
     ''' positions need to transfer to positions embedding '''
-    ''' positions embedding shape: [target_length, batch_size, feature_size, feature_size] '''
     r_positions = tf.where(positions < multi_infer_num, positions, tf.zeros_like(positions) + multi_infer_num)
+#     ''' positions proj_a embedding shape: [target_length, batch_size, feature_size, transfer_head] '''
+#     positions_proj_a_embedding = tf.nn.embedding_lookup(self.multi_transfer_proj_a, r_positions)
+#     proj_outputs = tf.einsum('ibd,ibde->ibe', outputs, positions_proj_a_embedding)
+    ''' positions w embedding shape: [target_length, batch_size, transfer_head, feature_size] '''
     positions_w_embedding = tf.nn.embedding_lookup(self.multi_transfer_w, r_positions)
-    transferred_outputs = tf.einsum('ibde,ibd->ibe', positions_w_embedding, outputs)
+    transferred_outputs = tf.einsum('ibed,ibe->ibd', positions_w_embedding, outputs)
     positions_b_embedding = tf.nn.embedding_lookup(self.multi_transfer_b, r_positions)
     transferred_outputs = transferred_outputs + positions_b_embedding
     ''' transferred_outputs shape: [target_length, batch_size, feature_size] '''

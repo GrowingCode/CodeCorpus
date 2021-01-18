@@ -26,7 +26,7 @@ def dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens):
   acc_log_probs = o_log_probs[0] # tf.zeros([top_ks[-1]], float_type)
   acc_ens = tf.expand_dims(o_ens[0], axis=1) # tf.zeros([top_ks[-1], 0], int_type)
   _, _, acc_log_probs, acc_ens = tf.while_loop(compute_ens_cond, compute_ens_body, [tf.constant(1, int_type), seq_len, acc_log_probs, acc_ens], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([top_ks[-1]]), tf.TensorShape([top_ks[-1], None])], parallel_iterations=1)
-  return acc_ens
+  return acc_log_probs, acc_ens
 
 
 if __name__ == '__main__':

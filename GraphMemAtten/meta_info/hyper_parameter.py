@@ -8,18 +8,19 @@ oracle_mem_len = 128
 oracle_test_mem_len = 128
 
 n_token = -1
-n_layer = 12
-d_model = 512
-d_embed = 512
-n_head = 8
-d_head = 64
-d_inner = 2048
+n_layer = 6
+d_model = 256
+d_embed = 256
+n_head = 4
+d_head = 32
+d_inner = 1024
+transfer_head = 128
 dropout = 0.1
 dropatt = 0.0
 learning_rate=0.00025
-batch_size = 10
+batch_size = 5
 
-multi_infer_num = 50
+multi_infer_num = 250
 
 multi_position_transfer_layer = 1
 

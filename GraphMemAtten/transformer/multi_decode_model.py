@@ -27,6 +27,8 @@ class MultiDecodeModel(tf.keras.Model):
     '''
     ''' all_outputs shape: [all_already_outputs_length(may drop the initial) batch_size feature_size] '''
     outputs, _, _, _, new_mems = self.transformer_model.transformer(dec_inp, target, mems, valid_mask, is_training=is_training)
+#     if stop_gradient_for_transformer_output_in_multi_decode:
+#       outputs = tf.stop_gradient(outputs)
     ''' outputs shape: [target_length batch_size feature_size] '''
     new_all_outputs = tf.concat([all_outputs, outputs], axis=0)
     

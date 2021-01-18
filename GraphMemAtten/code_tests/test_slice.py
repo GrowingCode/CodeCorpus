@@ -10,7 +10,15 @@ sliced_raw = tf.slice(raw, [0,0], [-1,-1])
 
 print(sliced_raw)
 
-last = raw[-1,:]
+last = raw[-1:,:]
 
 print(last)
+
+last2 = raw[-1,:]
+
+print(last2)
+
+
+
+
 

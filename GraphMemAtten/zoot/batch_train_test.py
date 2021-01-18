@@ -87,21 +87,30 @@ class BatchTrainTest(tf.keras.Model):
       batch_token_loss += loss
       token_count = tf.reduce_sum(part_valid_mask)
       batch_token_count += token_count
-      with tf.device("/gpu:0"):
-        if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
+      if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
+        with tf.device("/gpu:0"):
           grads = tape.gradient(loss, self.trainable_variables)
-  #         print(grads)
-          c_grads = [(tf.clip_by_value(grad, -gradient_clip_abs_range, gradient_clip_abs_range)) if grad != None else None for grad in grads]
-  #         grads = clip_gradients(grads)
-          nc_grads = [grad if grad is not None else tf.zeros_like(var) for (grad, var) in zip(c_grads, self.trainable_variables)]
-          self.optimizer.apply_gradients(zip(nc_grads, self.trainable_variables))
-        elif decode_mode == standard_infer_test or decode_mode == multi_infer_test:
-          token_accuracy = compute_batch_top_ks_accuracy(predictions, part_tgt_sequence, part_valid_mask)
-  #         for j in range(len(top_ks)):
-  #           batch_token_accuracy[j] += token_accuracy[j]
-          batch_token_accuracy += token_accuracy
-        else:
-          assert False
+#         
+#         print("==== print all vars and shape ====")
+#         for (grad, var) in zip(grads, self.trainable_variables):
+#           shape_str = str(tf.shape(grad)) if grad is not None else "None"
+#           print(str(var.name) + " shape:" + shape_str + "#var_shape:" + str(var.shape))
+#         
+        c_grads = [(tf.clip_by_value(grad, -gradient_clip_abs_range, gradient_clip_abs_range)) if grad != None else None for grad in grads]
+#         grads = clip_gradients(grads)
+#         nc_grads = [grad if grad is not None else tf.zeros_like(var) for (grad, var) in zip(c_grads, self.trainable_variables)]
+        applies = []
+        for (grad, var) in zip(c_grads, self.trainable_variables):
+          if grad is not None:
+            applies.append((grad, var))
+        self.optimizer.apply_gradients(applies)# zip(nc_grads, self.trainable_variables)
+      elif decode_mode == standard_infer_test or decode_mode == multi_infer_test:
+        token_accuracy = compute_batch_top_ks_accuracy(predictions, part_tgt_sequence, part_valid_mask)
+#         for j in range(len(top_ks)):
+#           batch_token_accuracy[j] += token_accuracy[j]
+        batch_token_accuracy += token_accuracy
+      else:
+        assert False
 #     numpy_batch_token_accuracy = [one_token_accuracy.numpy() for one_token_accuracy in batch_token_accuracy]
     return batch_token_loss.numpy(), batch_token_accuracy.numpy(), batch_token_count.numpy()
   

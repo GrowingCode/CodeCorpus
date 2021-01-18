@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import tensorflow as tf
 
 from inputs.read_tfxl_data import generate_parsed_dataset
 from meta_info.hyper_parameter import compute_beam,\
@@ -268,19 +269,22 @@ class ModelRunner():
 #         valid_noavg_record.write(json.dumps(noavg))
 #       print(dict_to_string(avg))
 #       print("===== Valid extra procedure is over! =====")
-    '''
-    compute average loss
-    test set loss/accuracy leaves_score/all_score
-    '''
-    print("===== Testing procedure starts! =====")
-    output_result = beam_model_running(self.batch_train_test_model, self.test_ds, test_mode)
-    avg = compute_average(output_result)
-#     noavg = process_noavg(output_result)
-    with open(best_txt, 'w') as best_model_statement_accuracy_record:
-      best_model_statement_accuracy_record.write(json.dumps(avg))
-#     with open(self.test_noavg_json, 'w') as test_noavg_record:
-#       test_noavg_record.write(json.dumps(noavg))
-    print(dict_to_string(avg))
+    if not os.path.exists(best_txt):
+      '''
+      compute average loss
+      test set loss/accuracy leaves_score/all_score
+      '''
+      print("===== Testing procedure starts! =====")
+      output_result = beam_model_running(self.batch_train_test_model, self.test_ds, test_mode)
+      avg = compute_average(output_result)
+  #     noavg = process_noavg(output_result)
+      with open(best_txt, 'w') as best_model_statement_accuracy_record:
+        best_model_statement_accuracy_record.write(json.dumps(avg))
+  #     with open(self.test_noavg_json, 'w') as test_noavg_record:
+  #       test_noavg_record.write(json.dumps(noavg))
+      print(dict_to_string(avg))
+    else:
+      print("=====" + "ResultFile Exists:" + str(best_txt) + ", if you want to run test_beam again, please delete this file =====")
   
   def restore_best(self, decode_info):
     best_model_directory = self.real_model_storage_dir + '/' + decode_info + "_" + model_best
@@ -461,24 +465,25 @@ def info_of_train_stop_test_start(average_accuracy):
   
 
 if __name__ == '__main__':
-  if not os.path.exists(train_tfxl_tfrecord):
-    generate_tfxl_record(origin_train_file, train_tfxl_tfrecord)
+  with tf.device('/cpu:0'):
+    if not os.path.exists(train_tfxl_tfrecord):
+      generate_tfxl_record(origin_train_file, train_tfxl_tfrecord)
+      
+    if not os.path.exists(test_tfxl_tfrecord):
+      generate_tfxl_record(origin_test_file, test_tfxl_tfrecord)
     
-  if not os.path.exists(test_tfxl_tfrecord):
-    generate_tfxl_record(origin_test_file, test_tfxl_tfrecord)
-  
-  mr = ModelRunner()
-  if compute_standard_infer:
-    mr.train_and_test(standard_infer)
-    mr.restore_best(standard_infer)
-    if compute_beam:
-      mr.test_beam(standard_infer)
-  
-  if compute_multi_infer:
-    mr.train_and_test(multi_infer)
-    mr.restore_best(multi_infer)
-    if compute_beam:
-      mr.test_beam(multi_infer)
+    mr = ModelRunner()
+    if compute_standard_infer:
+      mr.train_and_test(standard_infer)
+      mr.restore_best(standard_infer)
+      if compute_beam:
+        mr.test_beam(standard_infer)
+    
+    if compute_multi_infer:
+      mr.train_and_test(multi_infer)
+      mr.restore_best(multi_infer)
+      if compute_beam:
+        mr.test_beam(multi_infer)
 
 
 
