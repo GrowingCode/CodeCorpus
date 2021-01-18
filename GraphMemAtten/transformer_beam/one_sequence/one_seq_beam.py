@@ -1,6 +1,8 @@
 from meta_info.hyper_parameter import oracle_mem_len, n_layer, \
-  oracle_tgt_len, accuracy_based_on_whole, oracle_test_mem_len, multi_infer_num,\
-  skeleton_mode, n_skt
+  oracle_tgt_len, accuracy_based_on_whole, multi_infer_num,\
+  skeleton_mode, n_skt,\
+  memory_train_test_beam_consistent,\
+  additional_filter_memory_when_beam_step_inferring
 from meta_info.non_hyper_constant import int_type, float_type, top_ks, \
   standard_infer_test, multi_infer_test, skeleton_one, skeleton_pe, skeleton_e,\
   all_skt_one_to_each_base, all_skt_one_to_each_end, all_skt_one_to_each_start,\
@@ -12,7 +14,7 @@ from utils.cartesian_util import batch_cartesian_add_each_scalar_in_vect, \
   batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect
 from utils.dynamic_program_util import dp_compute_en_seqs_from_distinct_parallel_tokens
 from utils.memory_util import get_recent_fixed_length_memory, \
-  update_recent_fixed_length_memory
+  update_recent_fixed_length_memory, get_specified_varied_length_memory
 from utils.meta_util import get_varied_memory_shape_in_while_loop
 import numpy as np
 
@@ -87,12 +89,14 @@ class OneSeqBeam():
       token_part_token_type = tf.slice(token_type, [i], [part_seq_skip[i]])
       token_part_seq_exact = tf.slice(whole_seq_exact, [i], [part_seq_skip[i]])
       
-      token_mems_end = token_last_before_index - 1 + origin_mems_len
-      token_mems_start = tf.maximum(token_mems_end - oracle_test_mem_len + 1, 0)
-#       print("token_mems_start:" + str(token_mems_start) + "#token_mems_end:" + str(token_mems_end))
-      token_mems_before_last = []
-      for j in range(n_layer):
-        token_mems_before_last.append(tf.slice(all_mems[j], [token_mems_start, 0, 0], [token_mems_end-token_mems_start+1, -1, -1]))
+#       token_mems_end = token_last_before_index - 1 + origin_mems_len
+#       token_mems_start = tf.maximum(token_mems_end - oracle_test_mem_len + 1, 0)
+# #       print("token_mems_start:" + str(token_mems_start) + "#token_mems_end:" + str(token_mems_end))
+#       token_mems_before_last = []
+#       for j in range(n_layer):
+#         token_mems_before_last.append(tf.slice(all_mems[j], [token_mems_start, 0, 0], [token_mems_end-token_mems_start+1, -1, -1]))
+      token_mems_before_last = get_specified_varied_length_memory(mems, origin_mems_len + token_last_before_index - 1, oracle_mem_len, memory_train_test_beam_consistent)
+      
       token_last_before = whole_seq[token_last_before_index]
       r_token_last_before = tf.expand_dims(tf.expand_dims(token_last_before, axis=0), axis=1)
 #       print("r_token_last_before:" + str(r_token_last_before))
@@ -167,6 +171,9 @@ class OneSeqBeam():
       mems = list(mems_tuple)
       ''' mems shape should be [n_layer memory_length batch_size feature_size] '''
       _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(l_token, tf.zeros_like(l_token)-1, mems, tf.ones_like(l_token), is_training=False, mem_len=oracle_mem_len)
+      new_mems = update_recent_fixed_length_memory(mems, new_mems)
+      if additional_filter_memory_when_beam_step_inferring:
+        new_mems = get_specified_varied_length_memory(new_mems, -1, oracle_mem_len, memory_train_test_beam_consistent)
 #       print("r_predictions in infer_body:" + str(r_predictions))
       ''' probs          should be [1, batch_size, top_ks[-1]] '''
       ''' predictions    should be [1, batch_size, top_ks[-1]] '''
@@ -200,6 +207,9 @@ class OneSeqBeam():
 #       print(tf.shape(wloop_mems))
     else:
       _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, tf.ones_like(last_token), is_training=False, mem_len=oracle_mem_len)
+      new_mems = update_recent_fixed_length_memory(mems_before_last, new_mems)
+      if additional_filter_memory_when_beam_step_inferring:
+        new_mems = get_specified_varied_length_memory(new_mems, -1, oracle_mem_len, memory_train_test_beam_consistent)
   #     print("r_predictions out infer_body:" + str(r_predictions))
       i = tf.constant(1, int_type)
       probs = tf.squeeze(r_probs)
@@ -250,23 +260,24 @@ class OneSeqBeam():
     o_ens = tf.zeros([0, top_ks[-1]], int_type)
     r_steps = tf.cast(tf.minimum(multi_infer_num, steps), int_type)
     _, _, o_log_probs, o_ens = tf.while_loop(multi_infer_cond, multi_infer_body, [i, r_steps, o_log_probs, o_ens], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, top_ks[-1]]), tf.TensorShape([None, top_ks[-1]])], parallel_iterations=1)
-    computed_probs, computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
+    _, computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
     ''' ensure computed_en_seqs to shape: [top_ks[-1], steps] '''
 #     print("str(tf.shape(computed_en_seqs)):" + str(tf.shape(computed_en_seqs)))
     
     left_steps = steps - r_steps
-    if left_steps.numpy() > 0:
-      cat_last_token = tf.tile(last_token, [1, top_ks[-1]])
-      temp_all_tokens = tf.concat([cat_last_token, tf.transpose(computed_en_seqs, perm=[1, 0])], axis=0)
-      before_last_temp_all_tokens = tf.slice(temp_all_tokens, [0, 0], [tf.shape(temp_all_tokens)[0]-1, -1])
-      last_temp_all_tokens = temp_all_tokens[-1:, :]
-      new_mems_before_last = []
-      for j in range(n_layer):
-        new_mems_before_last.append(tf.tile(mems_before_last[j], [1, top_ks[-1], 1]))
-      _, _, _, _, new_mems = self.transformer_model.transformer(before_last_temp_all_tokens, tf.zeros_like(before_last_temp_all_tokens)-1, new_mems_before_last, tf.ones_like(before_last_temp_all_tokens), is_training=0, mem_len=oracle_mem_len)
-      new_temp_all_mems = update_recent_fixed_length_memory(new_mems_before_last, new_mems)
-      infer_ens = self.infer(new_temp_all_mems, last_temp_all_tokens, left_steps, initial_batch_size_is_one=False, initial_probs=computed_probs, initial_ens=computed_en_seqs)
-      computed_en_seqs = infer_ens# tf.concat([computed_en_seqs, infer_ens], axis=1)
+    assert left_steps <= 0
+#     if left_steps.numpy() > 0:
+#       cat_last_token = tf.tile(last_token, [1, top_ks[-1]])
+#       temp_all_tokens = tf.concat([cat_last_token, tf.transpose(computed_en_seqs, perm=[1, 0])], axis=0)
+#       before_last_temp_all_tokens = tf.slice(temp_all_tokens, [0, 0], [tf.shape(temp_all_tokens)[0]-1, -1])
+#       last_temp_all_tokens = temp_all_tokens[-1:, :]
+#       new_mems_before_last = []
+#       for j in range(n_layer):
+#         new_mems_before_last.append(tf.tile(mems_before_last[j], [1, top_ks[-1], 1]))
+#       _, _, _, _, new_mems = self.transformer_model.transformer(before_last_temp_all_tokens, tf.zeros_like(before_last_temp_all_tokens)-1, new_mems_before_last, tf.ones_like(before_last_temp_all_tokens), is_training=0, mem_len=oracle_mem_len)
+#       new_temp_all_mems = update_recent_fixed_length_memory(new_mems_before_last, new_mems)
+#       infer_ens = self.infer(new_temp_all_mems, last_temp_all_tokens, left_steps, initial_batch_size_is_one=False, initial_probs=computed_probs, initial_ens=computed_en_seqs)
+#       computed_en_seqs = infer_ens# tf.concat([computed_en_seqs, infer_ens], axis=1)
     return computed_en_seqs
     
     

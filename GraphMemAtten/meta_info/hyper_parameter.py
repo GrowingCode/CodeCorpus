@@ -7,6 +7,9 @@ oracle_tgt_len = 128
 oracle_mem_len = 128
 oracle_test_mem_len = 128
 
+memory_train_test_beam_consistent = 1
+additional_filter_memory_when_beam_step_inferring = 1
+
 n_token = -1
 n_layer = 6
 d_model = 256

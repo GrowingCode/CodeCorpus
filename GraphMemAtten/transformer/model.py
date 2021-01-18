@@ -42,15 +42,14 @@ def _create_mask(qlen, mlen, same_length=False):
   return ret
 
 
-def _cache_mem(curr_out, prev_mem, mem_len=None):
-  if mem_len is None or prev_mem is None:
-    new_mem = curr_out
-  elif mem_len == 0:
-    return prev_mem
-  else:
-    new_mem = tf.concat([prev_mem, curr_out], 0)[- mem_len:]
-
-  return tf.stop_gradient(new_mem)
+# def _cache_mem(curr_out, prev_mem, mem_len=None):
+#   if mem_len is None or prev_mem is None:
+#     new_mem = curr_out
+#   elif mem_len == 0:
+#     return prev_mem
+#   else:
+#     new_mem = tf.concat([prev_mem, curr_out], 0)[- mem_len:]
+#   return tf.stop_gradient(new_mem)
 
 
 class Transformer(tf.keras.Model):
@@ -160,7 +159,7 @@ class Transformer(tf.keras.Model):
     
     for i in range(n_layer):
       # cache new mems
-      new_mems.append(_cache_mem(output, mems[i], mem_len))
+      new_mems.append(output)#_cache_mem(, mems[i], mem_len)
       
       t_layer = self.t_layers[i]
       output = t_layer.rel_multihead_attn(
