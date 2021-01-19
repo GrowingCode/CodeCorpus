@@ -23,7 +23,7 @@ dropatt = 0.0
 learning_rate=0.00025
 batch_size = 5
 
-multi_infer_num = 250
+multi_infer_num = -1
 
 multi_position_transfer_layer = 1
 
@@ -59,19 +59,26 @@ test_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_test_tfxl.tfrecord"
 all_token_summary_file = open(data_dir + "/All_token_summary.json", 'r', encoding='UTF-8')
 all_token_summary_ts = json.load(all_token_summary_file)
 all_token_summary_file.close()
+all_skt_tensor_summary_file = open(data_dir + "/All_skt_tensor_summary.json", 'r', encoding='UTF-8')
+all_skt_tensor_summary_ts = json.load(all_skt_tensor_summary_file)
+all_skt_tensor_summary_file.close()
 if skeleton_mode == skeleton_one:
   n_skt = all_token_summary_ts["SkeletonHitNum"]
+  multi_infer_num = max(all_skt_tensor_summary_ts["max_skt_number_of_one_statement"], all_skt_tensor_summary_ts["max_token_number_of_one_statement"])
 elif skeleton_mode == skeleton_pe:
   n_skt = all_token_summary_ts["SkeletonPEHitNum"]
+  multi_infer_num = max(all_skt_tensor_summary_ts["max_skt_number_of_pe_statement"], all_skt_tensor_summary_ts["max_token_number_of_pe_statement"])
 elif skeleton_mode == skeleton_e:
   n_skt = all_token_summary_ts["SkeletonEachHitNum"]
+  multi_infer_num = max(all_skt_tensor_summary_ts["max_skt_number_of_e_statement"], all_skt_tensor_summary_ts["max_token_number_of_e_statement"])
 else:
   assert False
   
 n_token = n_skt + all_token_summary_ts["SkeletonTokenHitNum"]
 assert n_token > -1
+multi_infer_num = multi_infer_num + 10
 
-print("n_token:" + str(n_token) + "#SkeletonTokenHitNum:" + str(all_token_summary_ts["SkeletonTokenHitNum"]) + "#SktAccordingNum:" + str(n_token - 1 - all_token_summary_ts["SkeletonTokenHitNum"]))
+print("n_token:" + str(n_token) + "#multi_infer_num:" + str(multi_infer_num) + "#SkeletonTokenHitNum:" + str(all_token_summary_ts["SkeletonTokenHitNum"]) + "#SktAccordingNum:" + str(n_token - 1 - all_token_summary_ts["SkeletonTokenHitNum"]))
 
 
 
