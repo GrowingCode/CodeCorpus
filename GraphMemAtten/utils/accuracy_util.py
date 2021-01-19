@@ -257,7 +257,7 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
 #   return f_each_acc, f_whole_acc, f_count
 
 
-def compute_batch_top_ks_accuracy(predictions, oracle_tgt, r_valid_mask):
+def compute_batch_top_ks_accuracy(predictions, oracle_tgt, r_valid_mask, r_token_type):
   ''' predictions shape: [seq_length, batch_size, top_ks[-1]] '''
   ''' oracle_tgt shape: [seq_length, batch_size] '''
   ''' r_valid_mask shape: [seq_length, batch_size] '''
@@ -267,18 +267,34 @@ def compute_batch_top_ks_accuracy(predictions, oracle_tgt, r_valid_mask):
 #   print("tf.shape(predictions):" + str(tf.shape(predictions)))
 #   print("tf.shape(oracle_tgt):" + str(tf.shape(oracle_tgt)))
 #   print("tf.shape(valid_mask):" + str(tf.shape(valid_mask)))
-  token_accuracy = tf.zeros([0], float_type)
+  all_token_accuracy = tf.zeros([0], float_type)
+  t0_token_accuracy = tf.zeros([0], float_type)
+  t1_token_accuracy = tf.zeros([0], float_type)
+  
+  t0_mask = r_valid_mask * tf.cast(r_token_type == 0, int_type)
+  t1_mask = r_valid_mask * tf.cast(r_token_type == 1, int_type)
+  
   for i in range(len(top_ks)):
     tpk_imd_equal = imd_equal * top_ks_tensors[i]
     imd_out_i = tf.cast(tf.reduce_sum(tpk_imd_equal, axis=2) >= 1, int_type)
-    imd_out_i = imd_out_i * r_valid_mask
-    imd_out_i_sum = tf.reduce_sum(imd_out_i)
-    token_accuracy = tf.concat([token_accuracy, [tf.cast(imd_out_i_sum, float_type)]], axis=0)
-  ''' immediate_output shape: [seq_length, batch_size, len(top_ks)] '''
+    ''' immediate_output shape: [seq_length, batch_size] '''# , len(top_ks)
+    all_imd_out_i = imd_out_i * r_valid_mask
+    all_imd_out_i_sum = tf.reduce_sum(all_imd_out_i)
+    all_token_accuracy = tf.concat([all_token_accuracy, [tf.cast(all_imd_out_i_sum, float_type)]], axis=0)
+    
+    t0_imd_out_i = imd_out_i * t0_mask
+    t0_imd_out_i_sum = tf.reduce_sum(t0_imd_out_i)
+    t0_token_accuracy = tf.concat([t0_token_accuracy, [tf.cast(t0_imd_out_i_sum, float_type)]], axis=0)
+    
+    t1_imd_out_i = imd_out_i * t1_mask
+    t1_imd_out_i_sum = tf.reduce_sum(t1_imd_out_i)
+    t1_token_accuracy = tf.concat([t1_token_accuracy, [tf.cast(t1_imd_out_i_sum, float_type)]], axis=0)
   
   ''' final output shape: [len(top_ks)] '''
-  
-  return token_accuracy
+  all_token_count = tf.reduce_sum(r_valid_mask)
+  t0_token_count = tf.reduce_sum(t0_mask)
+  t1_token_count = tf.reduce_sum(t1_mask)
+  return all_token_accuracy, all_token_count, t0_token_accuracy, t0_token_count, t1_token_accuracy, t1_token_count
 
 
 # def generate_token_type_filter_mask(token_type):
@@ -294,23 +310,23 @@ def generate_token_type_filter_valid_mask(valid_mask, token_type, accuracy_filte
   return r_mask
 
 
-if __name__ == '__main__':
-  ''' test1 '''
-  l_base = tf.ones([1, 5], int_type)
-  ll = []
-  for i in range(10):
-    ll.append(l_base + i)
-  raw_computed_en_seqs = tf.concat(ll, axis=0)
-  raw_oracle_computed_en_seq = tf.ones([5], int_type)
-  oracle_valid_mask = tf.ones_like(raw_oracle_computed_en_seq)
-  res1 = compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, compute_one_whole=True)
-  print("str(res1):" + str(res1))
-  ''' test2 '''
-  predictions = tf.tile(tf.expand_dims(tf.expand_dims(tf.constant([0,1,2,3,4,5,6,7,8,9], int_type),0),0),[2,2,1])
-  oracle_tgt = tf.constant([[1,2],[3,4]], int_type)
-  r_valid_mask = tf.ones_like(oracle_tgt)
-  res2 = compute_batch_top_ks_accuracy(predictions, oracle_tgt, r_valid_mask)
-  print("str(res2):" + str(res2))
+# if __name__ == '__main__':
+#   ''' test1 '''
+#   l_base = tf.ones([1, 5], int_type)
+#   ll = []
+#   for i in range(10):
+#     ll.append(l_base + i)
+#   raw_computed_en_seqs = tf.concat(ll, axis=0)
+#   raw_oracle_computed_en_seq = tf.ones([5], int_type)
+#   oracle_valid_mask = tf.ones_like(raw_oracle_computed_en_seq)
+#   res1 = compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, compute_one_whole=True)
+#   print("str(res1):" + str(res1))
+#   ''' test2 '''
+#   predictions = tf.tile(tf.expand_dims(tf.expand_dims(tf.constant([0,1,2,3,4,5,6,7,8,9], int_type),0),0),[2,2,1])
+#   oracle_tgt = tf.constant([[1,2],[3,4]], int_type)
+#   r_valid_mask = tf.ones_like(oracle_tgt)
+#   res2 = compute_batch_top_ks_accuracy(predictions, oracle_tgt, r_valid_mask)
+#   print("str(res2):" + str(res2))
 
 
 

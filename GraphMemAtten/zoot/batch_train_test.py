@@ -34,7 +34,7 @@ class BatchTrainTest(tf.keras.Model):
     if compute_beam:
       self.one_seq_beam = OneSeqBeam(self.transformer_model, self.multi_decode_model)# self.multi_position_transfer
   
-  def batch_train_test(self, origin_sequence, relative_to_part_first, valid_mask, decode_mode):
+  def batch_train_test(self, origin_sequence, relative_to_part_first, valid_mask, token_type, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''
 #     print(origin_sequence)
     ori_sequence = origin_sequence[0:-1,:]
@@ -43,6 +43,7 @@ class BatchTrainTest(tf.keras.Model):
     tgt_sequence = origin_sequence[1:,:]
     r_relative_to_part_first = relative_to_part_first[1:,:]
     r_valid_mask = valid_mask[1:,:]
+    r_token_type = token_type[1:,:]
     seq_len = np.shape(ori_sequence)[0]
 #     print("seq_len:" + str(seq_len))
     batch_size = np.shape(ori_sequence)[1]
@@ -50,7 +51,10 @@ class BatchTrainTest(tf.keras.Model):
     batch_token_loss = tf.constant(0, float_type)
     batch_token_accuracy = tf.zeros([len(top_ks)], float_type)
     batch_token_count = tf.constant(0, int_type)
-    
+    batch_t0_token_accuracy = tf.zeros([len(top_ks)], float_type)
+    batch_t0_token_count = tf.constant(0, int_type)
+    batch_t1_token_accuracy = tf.zeros([len(top_ks)], float_type)
+    batch_t1_token_count = tf.constant(0, int_type)
     all_outputs = tf.tile(self.all_outputs, [1, batch_size, 1])
     
     mems = self.get_mems(batch_size)
@@ -63,6 +67,7 @@ class BatchTrainTest(tf.keras.Model):
       part_tgt_sequence = tgt_sequence[i:i_end,:]
       part_relative_to_part_first = r_relative_to_part_first[i:i_end,:]
       part_valid_mask = r_valid_mask[i:i_end,:]
+      part_token_type = r_token_type[i:i_end,:]
       with tf.device("/gpu:0"):
         if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
             with tf.GradientTape() as tape:
@@ -85,8 +90,8 @@ class BatchTrainTest(tf.keras.Model):
       i = i_end
 #       print("== executed! ==" + str(i))
       batch_token_loss += loss
-      token_count = tf.reduce_sum(part_valid_mask)
-      batch_token_count += token_count
+#       token_count = tf.reduce_sum(part_valid_mask)
+#       batch_token_count += token_count
       if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
         with tf.device("/gpu:0"):
           grads = tape.gradient(loss, self.trainable_variables)
@@ -105,14 +110,20 @@ class BatchTrainTest(tf.keras.Model):
             applies.append((grad, var))
         self.optimizer.apply_gradients(applies)# zip(nc_grads, self.trainable_variables)
       elif decode_mode == standard_infer_test or decode_mode == multi_infer_test:
-        token_accuracy = compute_batch_top_ks_accuracy(predictions, part_tgt_sequence, part_valid_mask)
+        all_acc, all_tokens, t0_acc, t0_tokens, t1_acc, t1_tokens = compute_batch_top_ks_accuracy(predictions, part_tgt_sequence, part_valid_mask, part_token_type)
+#         assert all_tokens.nump() == token_count.numpy()
 #         for j in range(len(top_ks)):
 #           batch_token_accuracy[j] += token_accuracy[j]
-        batch_token_accuracy += token_accuracy
+        batch_token_accuracy += all_acc
+        batch_token_count += all_tokens
+        batch_t0_token_accuracy += t0_acc
+        batch_t0_token_count += t0_tokens
+        batch_t1_token_accuracy += t1_acc
+        batch_t1_token_count += t1_tokens
       else:
         assert False
 #     numpy_batch_token_accuracy = [one_token_accuracy.numpy() for one_token_accuracy in batch_token_accuracy]
-    return batch_token_loss.numpy(), batch_token_accuracy.numpy(), batch_token_count.numpy()
+    return batch_token_loss.numpy(), batch_token_accuracy.numpy(), batch_token_count.numpy(), batch_t0_token_accuracy.numpy(), batch_t0_token_count.numpy(), batch_t1_token_accuracy.numpy(), batch_t1_token_count.numpy()
   
   def batch_test_beam(self, origin_sequence, valid_mask, seq_part_skip, token_type, origin_sequence_exact, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''

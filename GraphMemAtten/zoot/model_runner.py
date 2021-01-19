@@ -295,9 +295,13 @@ class ModelRunner():
   
   
 def model_running(model, ds, decode_mode):
+  all_token_loss = 0
   all_token_accuracy = np.zeros(len(top_ks), np_float_type)
   all_token_count = 0
-  all_token_loss = 0
+  t0_token_accuracy = np.zeros(len(top_ks), np_float_type)
+  t0_token_count = 0
+  t1_token_accuracy = np.zeros(len(top_ks), np_float_type)
+  t1_token_count = 0
 #   iterator = ds.make_one_shot_iterator()
 #   next_element = iterator.get_next()
   start_time = time.time()
@@ -305,10 +309,14 @@ def model_running(model, ds, decode_mode):
 #   while True:
 #     try:
   for next_element in ds:
-    batch_token_loss, batch_token_accuracy, batch_token_count = model.batch_train_test(next_element['origin_sequence'], next_element['relative_to_part_first'], next_element['valid_mask'], decode_mode)
+    batch_token_loss, batch_token_accuracy, batch_token_count, batch_t0_token_accuracy, batch_t0_token_count, batch_t1_token_accuracy, batch_t1_token_count = model.batch_train_test(next_element['origin_sequence'], next_element['relative_to_part_first'], next_element['valid_mask'], next_element['token_type'], decode_mode)
     all_token_loss += batch_token_loss
     all_token_accuracy += np.asarray(batch_token_accuracy, np_float_type)
     all_token_count += batch_token_count
+    t0_token_accuracy += np.asarray(batch_t0_token_accuracy, np_float_type)
+    t0_token_count += batch_t0_token_count
+    t1_token_accuracy += np.asarray(batch_t1_token_accuracy, np_float_type)
+    t1_token_count += batch_t1_token_count
 #     except tf.errors.OutOfRangeError:
 #       break
 #     else:
@@ -317,7 +325,7 @@ def model_running(model, ds, decode_mode):
   end_time = time.time()
 #   print("all_token_loss:" + str(all_token_loss))
   print("mode:" + str(decode_mode) + "#batch_size:" + str(i) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
-  return {'token_loss':all_token_loss, 'token_accuracy':all_token_accuracy, 'token_count':all_token_count}
+  return {'token_loss':all_token_loss, 'token_accuracy':all_token_accuracy, 'token_count':all_token_count, "skt_accuracy":t0_token_accuracy, "skt_count":t0_token_count, "tleaf_accuracy":t1_token_accuracy, "tleaf_count":t1_token_count}
   
   
 def beam_model_running(model, ds, decode_mode):
@@ -402,8 +410,10 @@ def compute_average(dict_t):
       k_tm = "average_" + k
       divd = dict_t[k_count].astype(np_float_type)
       if divd == 0.0:
-        divd = 0.0000000001
-      r[k_tm] = de_numpy(dict_t[k]/divd)
+#         divd = 0.0000000001
+        r[k_tm] = 0.0
+      else:
+        r[k_tm] = de_numpy(dict_t[k]/divd)
     elif k.endswith('_count'):
       r[k] = de_numpy(dict_t[k])
   return r
