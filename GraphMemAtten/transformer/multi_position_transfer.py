@@ -1,6 +1,8 @@
 import tensorflow as tf
 from meta_info.hyper_parameter import multi_infer_num, d_embed,\
-  multi_position_transfer_layer, use_simple_multi_infer_mode
+  multi_position_transfer_layer, use_simple_multi_infer_mode,\
+  multi_position_transfer_with_attention_style,\
+  multi_position_transfer_atten_head
 from utils.initialize_util import random_normal_variable_initializer
 
 
@@ -49,9 +51,12 @@ class LinearTransferFeatures(tf.keras.Model):
   
   def __init__(self):
     super(LinearTransferFeatures, self).__init__()
-#     self.multi_transfer_proj_a = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, d_embed, transfer_head]))
-#     self.multi_transfer_w = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, transfer_head, d_embed]))
-    self.multi_transfer_w = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, d_embed, d_embed]))
+    if multi_position_transfer_with_attention_style:
+      self.multi_transfer_proj_a = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, d_embed, multi_position_transfer_atten_head]))
+      self.multi_transfer_w = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, multi_position_transfer_atten_head, d_embed]))
+    else:
+      self.multi_transfer_w = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, d_embed, d_embed]))
+    
     self.multi_transfer_b = tf.Variable(random_normal_variable_initializer([multi_infer_num + 1, d_embed]))
     
   def linear(self, positions, outputs):
@@ -59,12 +64,16 @@ class LinearTransferFeatures(tf.keras.Model):
     ''' positions shape: [target_length, batch_size] '''
     ''' positions need to transfer to positions embedding '''
     r_positions = tf.where(positions < multi_infer_num, positions, tf.zeros_like(positions) + multi_infer_num)
-#     ''' positions proj_a embedding shape: [target_length, batch_size, feature_size, transfer_head] '''
-#     positions_proj_a_embedding = tf.nn.embedding_lookup(self.multi_transfer_proj_a, r_positions)
-#     proj_outputs = tf.einsum('ibd,ibde->ibe', outputs, positions_proj_a_embedding)
+    ''' positions proj_a embedding shape: [target_length, batch_size, feature_size, transfer_head] '''
+    if multi_position_transfer_with_attention_style:
+      positions_proj_a_embedding = tf.nn.embedding_lookup(self.multi_transfer_proj_a, r_positions)
+      atten_outs = tf.einsum('ibd,ibde->ibe', outputs, positions_proj_a_embedding)
+      attens = tf.nn.softmax(atten_outs, axis=2)
+    else:
+      attens = outputs
     ''' positions w embedding shape: [target_length, batch_size, transfer_head, feature_size] '''
     positions_w_embedding = tf.nn.embedding_lookup(self.multi_transfer_w, r_positions)
-    transferred_outputs = tf.einsum('ibed,ibe->ibd', positions_w_embedding, outputs)
+    transferred_outputs = tf.einsum('ibed,ibe->ibd', positions_w_embedding, attens)
     positions_b_embedding = tf.nn.embedding_lookup(self.multi_transfer_b, r_positions)
     transferred_outputs = transferred_outputs + positions_b_embedding
     ''' transferred_outputs shape: [target_length, batch_size, feature_size] '''

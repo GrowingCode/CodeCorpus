@@ -17,7 +17,6 @@ d_embed = 256
 n_head = 4
 d_head = 32
 d_inner = 1024
-transfer_head = 128
 dropout = 0.1
 dropatt = 0.0
 learning_rate=0.00025
@@ -26,6 +25,8 @@ batch_size = 5
 multi_infer_num = -1
 
 multi_position_transfer_layer = 1
+multi_position_transfer_with_attention_style = 0
+multi_position_transfer_atten_head = 256
 
 untie_r = 0
 
