@@ -38,6 +38,11 @@ def copy_files_from_one_directory_to_another_directory(d1, d2):
   for f1 in files_in_d1:
     f2 = d2 + d1[d1_length:]
     shutil.copy(f1, f2)
+    
+    
+def copy_file_to_directory(f, f_dir):
+  shutil.copy(f, f_dir)
+
   
 
 

@@ -14,7 +14,8 @@ from meta_info.non_hyper_constant import model_storage_dir, model_storage_parent
   top_ks, np_float_type, standard_infer, multi_infer,\
   debug_beam_handle_only_one_first_batch
 import numpy as np
-from utils.file_util import copy_files_from_one_directory_to_another_directory
+from utils.file_util import copy_files_from_one_directory_to_another_directory,\
+  copy_file_to_directory
 from zoot.batch_train_test import BatchTrainTest
 from inputs.write_tfxl_data import generate_tfxl_record
 
@@ -41,7 +42,8 @@ class ModelRunner():
     ast_meta_info_dir = self.real_model_storage_dir + "/" + 'data_meta_info'
     if not os.path.exists(ast_meta_info_dir):
       os.makedirs(ast_meta_info_dir)
-    copy_files_from_one_directory_to_another_directory(meta_dir, ast_meta_info_dir)
+      copy_files_from_one_directory_to_another_directory(meta_dir, ast_meta_info_dir)
+      copy_file_to_directory('../meta_info/hyper_parameter.py', ast_meta_info_dir)
     
     self.config_txt = self.real_model_storage_dir + '/' + model_config
     
@@ -167,7 +169,7 @@ class ModelRunner():
       train_compute_valid = (turn+1) % valid_epoch_period == 0
       if train_compute_valid:
 #         print("== running before test ==")
-        valid_output_result = model_running(self.batch_train_test_model, self.train_ds, test_mode)
+        valid_output_result = model_running(self.batch_train_test_model, self.test_ds, test_mode)
 #         print("== running after test ==")
         valid_avg = compute_average(valid_output_result)
 #         valid_noavg = process_noavg(valid_output_result)
