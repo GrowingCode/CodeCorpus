@@ -6,7 +6,8 @@ from meta_info.hyper_parameter import oracle_mem_len, n_layer, \
 from meta_info.non_hyper_constant import int_type, float_type, top_ks, \
   standard_infer_test, multi_infer_test, skeleton_one, skeleton_pe, skeleton_e,\
   all_skt_one_to_each_base, all_skt_one_to_each_end, all_skt_one_to_each_start,\
-  all_skt_pe_to_each_base, all_skt_pe_to_each_end, all_skt_pe_to_each_start
+  all_skt_pe_to_each_base, all_skt_pe_to_each_end, all_skt_pe_to_each_start,\
+  debug_in_test_beam
 import tensorflow as tf
 from utils.accuracy_util import compute_accuracy_of_sequences,\
   compute_skt_unit_expand_accuracy_of_sequences
@@ -47,7 +48,10 @@ class OneSeqBeam():
       
       temp_mems = get_recent_fixed_length_memory(all_mems, oracle_mem_len)
       
-      _, _, _, _, new_mems = self.transformer_model.transformer(dec_inp, target, temp_mems, temp_valid_mask, is_training=0, mem_len=oracle_mem_len)
+      _, _, predictions, _, new_mems = self.transformer_model.transformer(dec_inp, target, temp_mems, temp_valid_mask, is_training=0, mem_len=oracle_mem_len)
+      if debug_in_test_beam:
+        print("dec_inp:" + str(tf.squeeze(dec_inp).numpy()) + "#predictions:" + str(tf.squeeze(predictions).numpy()) + "#token_type:" + str(tf.squeeze(token_type).numpy()) + "#valid_mask:" + str(tf.squeeze(valid_mask).numpy()))
+      
       new_all_mems = update_recent_fixed_length_memory(all_mems, new_mems)
       
       return (idx + oracle_tgt_len, *new_all_mems)
@@ -95,7 +99,10 @@ class OneSeqBeam():
 #       token_mems_before_last = []
 #       for j in range(n_layer):
 #         token_mems_before_last.append(tf.slice(all_mems[j], [token_mems_start, 0, 0], [token_mems_end-token_mems_start+1, -1, -1]))
-      token_mems_before_last = get_specified_varied_length_memory(mems, origin_mems_len + token_last_before_index - 1, oracle_mem_len, memory_train_test_beam_consistent)
+      token_mems_before_last = get_specified_varied_length_memory(all_mems, origin_mems_len + token_last_before_index - 1, oracle_mem_len, memory_train_test_beam_consistent)
+      
+      if debug_in_test_beam:
+        print("tf.shape(token_mems_before_last):" + str(tf.shape(token_mems_before_last)))
       
       token_last_before = whole_seq[token_last_before_index]
       r_token_last_before = tf.expand_dims(tf.expand_dims(token_last_before, axis=0), axis=1)
@@ -210,10 +217,10 @@ class OneSeqBeam():
       new_mems = update_recent_fixed_length_memory(mems_before_last, new_mems)
       if additional_filter_memory_when_beam_step_inferring:
         new_mems = get_specified_varied_length_memory(new_mems, -1, oracle_mem_len, memory_train_test_beam_consistent)
-  #     print("r_predictions out infer_body:" + str(r_predictions))
+#       print("r_predictions out infer_body:" + str(r_predictions))
       i = tf.constant(1, int_type)
-      probs = tf.squeeze(r_probs)
-      raw_ens = tf.squeeze(r_predictions)
+      probs = tf.squeeze(r_probs, axis=[0, 1])
+      raw_ens = tf.squeeze(r_predictions, axis=[0, 1])
       ens = tf.expand_dims(raw_ens, axis=1)
       l_token = tf.expand_dims(raw_ens, axis=0)
 #     i_len = tf.constant(steps, int_type)

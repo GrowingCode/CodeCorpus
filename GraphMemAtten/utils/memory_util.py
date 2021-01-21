@@ -17,15 +17,17 @@ def get_specified_varied_length_memory(mems, last_index_in_extracted_mems, mem_l
   if last_index_in_extracted_mems == -1:
     last_index_in_extracted_mems = tf.shape(mems[0])[0] - 1
   extracted_with_before_size = last_index_in_extracted_mems + 1
+  if train_test_consistent:
+    e_size = mem_len + tf.math.mod(extracted_with_before_size, mem_len)
+  else:
+    e_size = mem_len
+    # tf.maximum(0, )
+  slice_start = extracted_with_before_size - e_size
+  slice_length = last_index_in_extracted_mems - slice_start + 1
+  assert slice_length == e_size
+  assert slice_start >= 0
   for j in range(n_layer):
-    if train_test_consistent:
-      e_size = mem_len + tf.math.mod(extracted_with_before_size, mem_len)
-    else:
-      e_size = mem_len
-      # tf.maximum(0, )
-    slice_start = extracted_with_before_size - e_size
-    assert slice_start >= 0
-    new_mems.append(tf.slice(mems[j], [slice_start, 0, 0], [-1, -1, -1]))
+    new_mems.append(tf.slice(mems[j], [slice_start, 0, 0], [slice_length, -1, -1]))
   return new_mems
 
 

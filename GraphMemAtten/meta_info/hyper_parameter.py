@@ -3,8 +3,6 @@ from meta_info.non_hyper_constant import data_dir, skeleton_pe,\
 import json
 
 
-only_run_one_batch_in_test_beam = 1
-
 oracle_tgt_len = 128
 oracle_mem_len = 128
 oracle_test_mem_len = 128
