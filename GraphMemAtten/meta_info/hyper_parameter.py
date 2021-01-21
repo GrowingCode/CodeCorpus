@@ -3,6 +3,8 @@ from meta_info.non_hyper_constant import data_dir, skeleton_pe,\
 import json
 
 
+only_run_one_batch_in_test_beam = 1
+
 oracle_tgt_len = 128
 oracle_mem_len = 128
 oracle_test_mem_len = 128
@@ -33,13 +35,6 @@ untie_r = 0
 standard_infer_train_to_predict_unk = 0
 multi_infer_train_to_predict_unk = 0
 accuracy_based_on_whole = 0
-# '''
-# token type:
-# -1: all 
-# 0: only skt
-# 1: only non-skt token
-# '''
-# accuracy_filter_based_on_token_type = accuracy_no_filter
 
 initial_memory_trainable = 0
 
@@ -48,7 +43,6 @@ compute_multi_infer = 1
 compute_beam = 1
 
 use_simple_multi_infer_mode = 0
-# run_decode_info = standard_infer
 skeleton_mode = skeleton_pe
 
 origin_train_file = data_dir + "/" + skeleton_mode + "_train_data.txt"
