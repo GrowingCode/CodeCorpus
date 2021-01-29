@@ -42,7 +42,7 @@ proj_initializer = tf.keras.initializers.random_normal(
           seed=None)
 
 
-top_ks = [1, 3, 6, 10]
+top_ks = [1, 2, 3, 6, 10]
 mrr_max = 10
 
 top_ks_tensors = []
