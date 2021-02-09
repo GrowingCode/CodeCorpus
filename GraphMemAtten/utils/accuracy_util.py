@@ -3,114 +3,139 @@ from meta_info.non_hyper_constant import float_type, int_type, top_ks,\
   top_ks_tensors
 import numpy as np
 from builtins import len
-from meta_info.hyper_parameter import n_skt
+from meta_info.hyper_parameter import lcs_accuracy_mode
 
 
-def compute_skt_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_start, unit_expand_end, raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, compute_one_whole=True):
-#   print("tf.shape(raw_computed_en_seqs):" + str(tf.shape(raw_computed_en_seqs)))
-#   print("tf.shape(raw_oracle_computed_en_seq):" + str(tf.shape(raw_oracle_computed_en_seq)))
-#   print("tf.shape(oracle_valid_mask):" + str(tf.shape(oracle_valid_mask)))
-  tf_seq_list = tf.unstack(raw_computed_en_seqs)
-  np_seq_list = [tf_seq.numpy() for tf_seq in tf_seq_list]
-  l_size = len(np_seq_list)
-  
-  np_oracle_en_seq = raw_oracle_computed_en_seq.numpy()
-  np_oracle_valid_mask = oracle_valid_mask.numpy()
-  
-  infer_size = np.size(np_seq_list[0])
-  oracle_size = np.size(np_oracle_en_seq)
-  
-  
-  max_epos_right = 0
-  max_whole_right = 0
-  
-  tpk_idx = 0
-  f_each_acc = [0 for _ in top_ks]
-  f_whole_acc = [0 for _ in top_ks]
-  f_count = 0
-  
-  oracle_unit_expand_seq_list = []
-  oracle_sub_unit_size = 0
-  
-  for k in range(oracle_size):
-    oracle_en = np_oracle_en_seq[k]
-#     if np_oracle_valid_mask[k]:
-    assert oracle_en > 2
-    oracle_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, oracle_en)
-    os_size = np.size(oracle_seq)
-    oracle_unit_expand_seq = []
-    oracle_unit_expand_seq_list.append(oracle_unit_expand_seq)
-    for i in range(os_size):
-      if oracle_seq[i] > 2:
-        oracle_unit_expand_seq.append(oracle_seq[i])
-        oracle_sub_unit_size += 1
-      else:
-        oracle_unit_expand_seq.append(None)
-    
+# def compute_skt_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_start, unit_expand_end, raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, compute_one_whole=True):
+# #   print("tf.shape(raw_computed_en_seqs):" + str(tf.shape(raw_computed_en_seqs)))
+# #   print("tf.shape(raw_oracle_computed_en_seq):" + str(tf.shape(raw_oracle_computed_en_seq)))
+# #   print("tf.shape(oracle_valid_mask):" + str(tf.shape(oracle_valid_mask)))
+#   tf_seq_list = tf.unstack(raw_computed_en_seqs)
+#   np_seq_list = [tf_seq.numpy() for tf_seq in tf_seq_list]
+#   l_size = len(np_seq_list)
+#   
+#   np_oracle_en_seq = raw_oracle_computed_en_seq.numpy()
+#   np_oracle_valid_mask = oracle_valid_mask.numpy()
+#   
+#   infer_size = np.size(np_seq_list[0])
+#   oracle_size = np.size(np_oracle_en_seq)
+#   
+#   max_epos_right = 0
+#   max_whole_right = 0
+#   
+#   tpk_idx = 0
+#   f_each_acc = [0 for _ in top_ks]
+#   f_whole_acc = [0 for _ in top_ks]
+#   f_count = 0
+#   
+#   oracle_unit_expand_seq_list = []
+#   oracle_sub_unit_size = 0
+#   
+#   for k in range(oracle_size):
+#     oracle_en = np_oracle_en_seq[k]
+# #     if np_oracle_valid_mask[k]:
+#     assert oracle_en > 2
+#     oracle_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, oracle_en)
+#     os_size = np.size(oracle_seq)
+#     oracle_unit_expand_seq = []
+#     for i in range(os_size):
+#       if oracle_seq[i] > 2:
+#         oracle_unit_expand_seq.append(oracle_seq[i])
+#         oracle_sub_unit_size += 1
+#       else:
+#         oracle_unit_expand_seq.append(None)
+#     oracle_unit_expand_seq_list.extend(oracle_unit_expand_seq)
+#     
+# #     else:
+# #       assert oracle_en <= 2
+# #       oracle_unit_expand_seq_list.append(None)
+#   r_size = min(infer_size, oracle_size)
+#   
+#   if oracle_sub_unit_size > 0:
+#     if compute_one_whole:
+#       f_count = 1
 #     else:
-#       assert oracle_en <= 2
-#       oracle_unit_expand_seq_list.append(None)
-  r_size = min(infer_size, oracle_size)
-  
-  if oracle_sub_unit_size > 0:
-    if compute_one_whole:
-      f_count = 1
-    else:
-      f_count = oracle_sub_unit_size
-    
-    for i in range(l_size):
-      nsl = np_seq_list[i]
-      temp_pos_accurate_count = 0
-      
-      for j in range(r_size):
-        
-        if np_oracle_valid_mask[j]:
-          infer_en = nsl[j]
-#           assert infer_en > 2
-          if 2 < infer_en and infer_en < n_skt:
-            infer_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, infer_en)
-            pos_acc = compare_two_sequences(infer_seq, oracle_unit_expand_seq_list[j])
-            temp_pos_accurate_count += pos_acc
-      
-      assert temp_pos_accurate_count <= oracle_sub_unit_size
-      
-      if compute_one_whole:
-        epos_right = temp_pos_accurate_count / oracle_sub_unit_size
-        whole_right = float(temp_pos_accurate_count == oracle_sub_unit_size)
+#       f_count = oracle_sub_unit_size
+#     
+#     for i in range(l_size):
+#       nsl = np_seq_list[i]
+#       temp_pos_accurate_count = 0
+#       
+#       for j in range(r_size):
+#         
+#         if np_oracle_valid_mask[j]:
+#           infer_en = nsl[j]
+# #           assert infer_en > 2
+#           if 2 < infer_en and infer_en < n_skt:
+#             infer_seq = get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, infer_en)
+#             pos_acc = compare_two_sequences(infer_seq, oracle_unit_expand_seq_list[j])
+#             temp_pos_accurate_count += pos_acc
+#       
+#       assert temp_pos_accurate_count <= oracle_sub_unit_size
+#       
+#       if compute_one_whole:
+#         epos_right = temp_pos_accurate_count / oracle_sub_unit_size
+#         whole_right = float(temp_pos_accurate_count == oracle_sub_unit_size)
+#       else:
+#         epos_right = temp_pos_accurate_count
+#         whole_right = float(temp_pos_accurate_count == oracle_sub_unit_size) * oracle_sub_unit_size
+#       
+#       max_epos_right = max(max_epos_right, epos_right)
+#       max_whole_right = max(max_whole_right, whole_right)
+#       
+#       assert tpk_idx < len(top_ks)
+#       if i+1 == top_ks[tpk_idx]:
+#         f_each_acc[tpk_idx] += max_epos_right
+#         f_whole_acc[tpk_idx] += max_whole_right
+#         tpk_idx = tpk_idx + 1
+#     
+# #   assert len(top_ks) == len(f_each_acc)
+# #   assert len(top_ks) == len(f_whole_acc)
+#   
+#   return tf.convert_to_tensor(f_each_acc, float_type), tf.convert_to_tensor(f_whole_acc, float_type), tf.convert_to_tensor(f_count, int_type)
+
+
+def lcs(a,b):
+  lena=len(a)
+  lenb=len(b)
+  c=[[0 for _ in range(lenb+1)] for _ in range(lena+1)]
+  flag=[[0 for _ in range(lenb+1)] for _ in range(lena+1)]
+  for i in range(lena):
+    for j in range(lenb):
+      if a[i]==b[j]:
+        c[i+1][j+1]=c[i][j]+1
+        flag[i+1][j+1]='ok'
+      elif c[i+1][j]>c[i][j+1]:
+        c[i+1][j+1]=c[i+1][j]
+        flag[i+1][j+1]='left'
       else:
-        epos_right = temp_pos_accurate_count
-        whole_right = float(temp_pos_accurate_count == oracle_sub_unit_size) * oracle_sub_unit_size
-      
-      max_epos_right = max(max_epos_right, epos_right)
-      max_whole_right = max(max_whole_right, whole_right)
-      
-      assert tpk_idx < len(top_ks)
-      if i+1 == top_ks[tpk_idx]:
-        f_each_acc[tpk_idx] += max_epos_right
-        f_whole_acc[tpk_idx] += max_whole_right
-        tpk_idx = tpk_idx + 1
-    
-#   assert len(top_ks) == len(f_each_acc)
-#   assert len(top_ks) == len(f_whole_acc)
-  
-  return tf.convert_to_tensor(f_each_acc, float_type), tf.convert_to_tensor(f_whole_acc, float_type), tf.convert_to_tensor(f_count, int_type)
+        c[i+1][j+1]=c[i][j+1]
+        flag[i+1][j+1]='up'
+  return c,flag, c[-1][-1]
 
 
-def get_unit_expand_sequence(unit_expand_base, unit_expand_start, unit_expand_end, en):
-  en_start = unit_expand_start[en]
-  en_end = unit_expand_end[en]
-  assert en_end >= en_start, "wrong en:" + str(en)
-  seq = unit_expand_base[en_start:en_end+1]
-  return seq
+def print_lcs(flag,a,i,j):
+  if i==0 or j==0:
+    return
+  if flag[i][j]=='ok':
+    print_lcs(flag,a,i-1,j-1)
+    print(a[i-1],end='')
+  elif flag[i][j]=='left':
+    print_lcs(flag,a,i,j-1)
+  else:
+    print_lcs(flag,a,i-1,j)
 
 
 def compare_two_sequences(infer_seq, oracle_seq):
   size = np.size(oracle_seq)
   i_len = min(np.size(infer_seq), size)
   acc_count = 0
-  for i in range(i_len):
-    if infer_seq[i] == oracle_seq[i]:
-      acc_count = acc_count + 1
+  if lcs_accuracy_mode:
+    _, _, acc_count = lcs(infer_seq, oracle_seq)
+  else:
+    for i in range(i_len):
+      if infer_seq[i] == oracle_seq[i]:
+        acc_count = acc_count + 1
   return acc_count
 
 
@@ -118,11 +143,13 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
 #   print("tf.shape(raw_computed_en_seqs):" + str(tf.shape(raw_computed_en_seqs)))
 #   print("tf.shape(raw_oracle_computed_en_seq):" + str(tf.shape(raw_oracle_computed_en_seq)))
 #   print("tf.shape(oracle_valid_mask):" + str(tf.shape(oracle_valid_mask)))
-  tf_seq_list = tf.unstack(raw_computed_en_seqs)
-  np_seq_list = [tf_seq.numpy() for tf_seq in tf_seq_list]
+#   tf_seq_list = tf.unstack(raw_computed_en_seqs)
+#   np_seq_list = [tf_seq.numpy() for tf_seq in tf_seq_list]
+  np_seq_list = raw_computed_en_seqs
   l_size = len(np_seq_list)
   
-  np_oracle_en_seq = raw_oracle_computed_en_seq.numpy()
+#   np_oracle_en_seq = raw_oracle_computed_en_seq.numpy()
+  np_oracle_en_seq = raw_oracle_computed_en_seq
   np_oracle_valid_mask = oracle_valid_mask.numpy()
 #   np_oracle_seq_valid_number = oracle_seq_valid_number.numpy()
   
@@ -311,7 +338,29 @@ def generate_token_type_filter_valid_mask(valid_mask, token_type, accuracy_filte
   return r_mask
 
 
-# if __name__ == '__main__':
+def test_lcs():
+  a='ABCBDAB'
+  b='BDCABA'
+  print(a)
+  print(b)
+  print('====')
+  c,flag,count=lcs(a,b)
+  print_lcs(flag,a,len(a),len(b))
+  print('')
+  print(count)
+  assert c != None
+#   for i in c:
+#     print(i)
+#   print('')
+#   for j in flag:
+#     print(j)
+#   print('')
+#   print('')
+  
+
+
+if __name__ == '__main__':
+  test_lcs()
 #   ''' test1 '''
 #   l_base = tf.ones([1, 5], int_type)
 #   ll = []

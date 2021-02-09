@@ -1,16 +1,10 @@
 from meta_info.hyper_parameter import oracle_mem_len, n_layer, \
   oracle_tgt_len, accuracy_based_on_whole, multi_infer_num,\
-  skeleton_mode, n_skt,\
-  memory_train_test_beam_consistent,\
-  additional_filter_memory_when_beam_step_inferring
+  n_skt, memory_train_test_beam_consistent, additional_filter_memory_when_beam_step_inferring
 from meta_info.non_hyper_constant import int_type, float_type, top_ks, \
-  standard_infer_test, multi_infer_test, skeleton_one, skeleton_pe, skeleton_e,\
-  all_skt_one_to_each_base, all_skt_one_to_each_end, all_skt_one_to_each_start,\
-  all_skt_pe_to_each_base, all_skt_pe_to_each_end, all_skt_pe_to_each_start,\
-  debug_in_test_beam
+  standard_infer_test, multi_infer_test, debug_in_test_beam
 import tensorflow as tf
-from utils.accuracy_util import compute_accuracy_of_sequences,\
-  compute_skt_unit_expand_accuracy_of_sequences
+from utils.accuracy_util import compute_accuracy_of_sequences
 from utils.cartesian_util import batch_cartesian_add_each_scalar_in_vect, \
   batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect
 from utils.dynamic_program_util import dp_compute_en_seqs_from_distinct_parallel_tokens
@@ -18,6 +12,8 @@ from utils.memory_util import get_recent_fixed_length_memory, \
   update_recent_fixed_length_memory, get_specified_varied_length_memory
 from utils.meta_util import get_varied_memory_shape_in_while_loop
 import numpy as np
+from utils.unit_expand_util import get_unit_expand_sequence,\
+  get_unit_expand_sequence_list
 
 
 class OneSeqBeam():
@@ -132,30 +128,34 @@ class OneSeqBeam():
     part_seq_len = tf.shape(part_seq)[0]
     part_seq_exact_len = tf.shape(part_seq_exact)[0]
     assert part_seq_len == part_seq_exact_len
+    r_part_seq_exact = get_unit_expand_sequence(part_seq_exact.tolist())
+    r_part_seq_len = len(r_part_seq_exact)
     with tf.device('/gpu:0'):
       if decode_mode == standard_infer_test:
-        inferred_ens = self.infer(mems_before_last, last_token_before_part_seq, part_seq_len)
+        inferred_ens = self.infer(mems_before_last, last_token_before_part_seq, r_part_seq_len)
       elif decode_mode == multi_infer_test:
-        inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, part_seq_len)
+        inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, r_part_seq_len)
       else:
         assert False
+    r_inferred_ens = get_unit_expand_sequence_list(inferred_ens.tolist(), r_part_seq_len)
     ptt_np = part_token_type.numpy()
     e0 = np.all(ptt_np == 0)
     e1 = np.all(ptt_np == 1)
     assert e0 or e1
     if e0:
-      if skeleton_mode == skeleton_e:
-        skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_accuracy_of_sequences(inferred_ens, part_seq_exact, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
-      elif skeleton_mode == skeleton_pe:
-        skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_skt_unit_expand_accuracy_of_sequences(all_skt_pe_to_each_base, all_skt_pe_to_each_start, all_skt_pe_to_each_end, inferred_ens, part_seq_exact, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
-      elif skeleton_mode == skeleton_one:
-        skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_skt_unit_expand_accuracy_of_sequences(all_skt_one_to_each_base, all_skt_one_to_each_start, all_skt_one_to_each_end, inferred_ens, part_seq_exact, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
-      else:
-        assert False
+#       if skeleton_mode == skeleton_e:
+#         skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_accuracy_of_sequences(inferred_ens, part_seq_exact, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
+#       elif skeleton_mode == skeleton_pe:
+#         skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_skt_unit_expand_accuracy_of_sequences(all_skt_pe_to_each_base, all_skt_pe_to_each_start, all_skt_pe_to_each_end, inferred_ens, part_seq_exact, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
+#       elif skeleton_mode == skeleton_one:
+#         skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_skt_unit_expand_accuracy_of_sequences(all_skt_one_to_each_base, all_skt_one_to_each_start, all_skt_one_to_each_end, inferred_ens, part_seq_exact, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
+#       else:
+#         assert False
+      skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_accuracy_of_sequences(r_inferred_ens, r_part_seq_exact, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
       token_f_each_acc, token_f_whole_acc, token_f_count = tf.constant(0, float_type), tf.constant(0, float_type), tf.constant(0, int_type)
     if e1:
       skt_f_each_acc, skt_f_whole_acc, skt_f_count = tf.constant(0, float_type), tf.constant(0, float_type), tf.constant(0, int_type)
-      token_f_each_acc, token_f_whole_acc, token_f_count = compute_accuracy_of_sequences(inferred_ens, part_seq_exact, part_valid_mask, n_skt, compute_one_whole=accuracy_based_on_whole)
+      token_f_each_acc, token_f_whole_acc, token_f_count = compute_accuracy_of_sequences(r_inferred_ens, r_part_seq_exact, part_valid_mask, n_skt, compute_one_whole=accuracy_based_on_whole)
 #     print("inferred_ens:" + str(inferred_ens) + "#last_token_before_part_seq:" + str(last_token_before_part_seq) + "#part_seq:" + str(part_seq))
     return skt_f_each_acc, skt_f_whole_acc, skt_f_count, token_f_each_acc, token_f_whole_acc, token_f_count
   

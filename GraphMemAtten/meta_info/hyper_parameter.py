@@ -22,6 +22,8 @@ dropatt = 0.0
 learning_rate=0.00025
 batch_size = 5
 
+lcs_accuracy_mode = 1
+
 multi_infer_num = -1
 
 multi_position_transfer_layer = 1
