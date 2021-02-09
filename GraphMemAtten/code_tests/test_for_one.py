@@ -7,5 +7,5 @@ for en in ens:
 '''
 
 ll = [1, 2]
-print(ll[1:1])
+print(ll[1:10])
 
