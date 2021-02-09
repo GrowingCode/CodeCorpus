@@ -5,13 +5,16 @@ from meta_info.hyper_parameter import skeleton_mode, n_skt
 
 
 def get_unit_expand_sequence(ens, ens_len, replace_unk_with_none=True):
+  need_expand = 0
   if skeleton_mode == skeleton_e:
     pass
   elif skeleton_mode == skeleton_pe:
+    need_expand = 1
     unit_expand_base = all_skt_pe_to_each_base
     unit_expand_start = all_skt_pe_to_each_start
     unit_expand_end = all_skt_pe_to_each_end
   elif skeleton_mode == skeleton_one:
+    need_expand = 1
     unit_expand_base = all_skt_one_to_each_base
     unit_expand_start = all_skt_one_to_each_start
     unit_expand_end = all_skt_one_to_each_end
@@ -21,7 +24,7 @@ def get_unit_expand_sequence(ens, ens_len, replace_unk_with_none=True):
   seq = []
 #   print("length of ens:" + str(len(ens)))
   for en in ens:
-    if 2 < en < n_skt:
+    if 2 < en < n_skt and need_expand:
       en_start = unit_expand_start[en]
       en_end = unit_expand_end[en]
       assert en_end >= en_start, "wrong en:" + str(en)
