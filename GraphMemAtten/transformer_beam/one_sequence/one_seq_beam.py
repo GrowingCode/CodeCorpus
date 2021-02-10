@@ -1,6 +1,7 @@
 from meta_info.hyper_parameter import oracle_mem_len, n_layer, \
   oracle_tgt_len, accuracy_based_on_whole, multi_infer_num,\
-  memory_train_test_beam_consistent, additional_filter_memory_when_beam_step_inferring
+  memory_train_test_beam_consistent, additional_filter_memory_when_beam_step_inferring,\
+  beam_infer_with_skt_e_full_length
 from meta_info.non_hyper_constant import int_type, float_type, top_ks, \
   standard_infer_test, multi_infer_test, debug_in_test_beam
 import tensorflow as tf
@@ -136,12 +137,19 @@ class OneSeqBeam():
     assert part_seq_len == part_seq_exact_len
 #     print("part_seq_exact.numpy():" + str(part_seq_exact.numpy()))
     r_part_seq_exact = get_unit_expand_sequence(part_seq_exact.numpy().tolist(), -1)
+    r_part_seq_len = len(r_part_seq_exact)
+    
+    predict_len = part_seq_len
+    final_trim_len = -1
+    if beam_infer_with_skt_e_full_length:
+      predict_len = r_part_seq_len
+      final_trim_len = r_part_seq_len
 #     print("r_part_seq_exact:" + str(r_part_seq_exact))
     with tf.device('/gpu:0'):
       if decode_mode == standard_infer_test:
-        inferred_ens = self.infer(mems_before_last, last_token_before_part_seq, part_seq_len)
+        inferred_ens = self.infer(mems_before_last, last_token_before_part_seq, predict_len)
       elif decode_mode == multi_infer_test:
-        inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, part_seq_len)
+        inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, predict_len)
       else:
         assert False
 #     print("inferred_ens.numpy():" + str(inferred_ens.numpy()))
@@ -155,7 +163,7 @@ class OneSeqBeam():
 #       else:
 #         assert False
 #       r_part_seq_len = len(r_part_seq_exact)
-      r_inferred_ens = get_unit_expand_sequence_list(inferred_ens.numpy().tolist(), -1)# r_part_seq_len
+      r_inferred_ens = get_unit_expand_sequence_list(inferred_ens.numpy().tolist(), final_trim_len)
 #       print("r_inferred_ens:" + str(r_inferred_ens))
       skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_accuracy_of_sequences(r_inferred_ens, r_part_seq_exact, compute_one_whole=accuracy_based_on_whole)
       token_f_each_acc, token_f_whole_acc, token_f_count = tf.constant(0, float_type), tf.constant(0, float_type), tf.constant(0, int_type)

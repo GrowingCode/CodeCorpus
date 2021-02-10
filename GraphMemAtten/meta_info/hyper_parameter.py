@@ -22,7 +22,7 @@ dropatt = 0.0
 learning_rate=0.00025
 batch_size = 5
 
-lcs_accuracy_mode = 1
+lcs_accuracy_mode = 0
 
 multi_infer_num = -1
 
@@ -41,6 +41,8 @@ initial_memory_trainable = 0
 compute_standard_infer = 1
 compute_multi_infer = 1
 compute_beam = 1
+
+beam_infer_with_skt_e_full_length = 0
 
 use_simple_multi_infer_mode = 0
 skeleton_mode = skeleton_pe
