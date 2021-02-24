@@ -1,6 +1,7 @@
 from meta_info.non_hyper_constant import data_dir, skeleton_pe,\
-  skeleton_one, skeleton_e
+  skeleton_one, skeleton_e, debug_assert
 import json
+import tensorflow as tf
 
 
 oracle_tgt_len = 128
@@ -77,6 +78,8 @@ multi_infer_num = multi_infer_num + 10
 
 print("n_token:" + str(n_token) + "#multi_infer_num:" + str(multi_infer_num) + "#SkeletonTokenHitNum:" + str(all_token_summary_ts["SkeletonTokenHitNum"]) + "#SktAccordingNum:" + str(n_token - 1 - all_token_summary_ts["SkeletonTokenHitNum"]))
 
+if debug_assert:
+  n_token_one_hot = tf.linalg.diag(tf.ones([n_token]))
 
 
 

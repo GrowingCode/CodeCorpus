@@ -1,6 +1,7 @@
 import tensorflow as tf
-from meta_info.non_hyper_constant import top_ks
-from meta_info.hyper_parameter import d_model, n_token, d_embed
+from meta_info.non_hyper_constant import top_ks, all_skt_hint_mask, debug_assert,\
+  int_type
+from meta_info.hyper_parameter import d_model, n_token, d_embed, n_token_one_hot
 from utils.initialize_util import random_normal_variable_initializer,\
   zero_variable_initializer
 
@@ -16,14 +17,24 @@ class LossCalculator(tf.keras.Model):
     self.token_output_softmax_b = tf.Variable(zero_variable_initializer([n_token]))
   
   # return_mean=True
-  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, compute_prediction, train_to_predict_unk):
-  
+  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, parent_hint, compute_prediction, train_to_predict_unk=False):
+    
+#     prediction_mask = tf.gather(hint_mask, parent_hint)
+    prediction_mask = tf.nn.embedding_lookup(all_skt_hint_mask, parent_hint)
+    ''' ['tf.shape(prediction_mask):', [128 6 27]] '''
     output = generate_logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
     
+    r_output = tf.where(tf.equal(prediction_mask, 1), output, -1e30*tf.ones_like(output))
+    
+    if debug_assert:
+      o_hot = tf.nn.embedding_lookup(n_token_one_hot, target)
+      one_sum = tf.einsum('ibd,ibd->ib', o_hot, prediction_mask)
+      result = tf.reduce_all(tf.equal(one_sum, tf.constant(1, int_type)))
+      assert result.numpy() == True
 #     nll = None
 #     if not compute_prediction:
     nll = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target,
-                                                         logits=output)
+                                                         logits=r_output)
     
     ''' ['tf.shape(output):', [128 6 27]] '''
     ''' ['tf.shape(nll):', [128 6]] '''

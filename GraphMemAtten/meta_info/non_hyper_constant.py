@@ -79,6 +79,7 @@ accuracy_non_skt_token_filter = 1
 debug_in_test_beam = 0
 debug_beam_handle_only_one_first_batch = 0
 debug_beam_handle_only_one_first_example_in_batch = 0
+debug_assert = 0
 
 ''' initialize project_size '''
 meta_of_app_handle_file = open(meta_dir + "/meta_of_app_handle.json", 'r', encoding='UTF-8')
@@ -107,6 +108,10 @@ all_skt_pe_to_each_base = np.array(all_skt_pe_to_each_ts[0])
 all_skt_pe_to_each_start = np.array(all_skt_pe_to_each_ts[1])
 all_skt_pe_to_each_end = np.array(all_skt_pe_to_each_ts[2])
 
+all_skt_hint_mask_file = open(data_dir + "/All_skt_hint_mask.json", 'r', encoding='UTF-8')
+all_skt_hint_mask_ts = json.load(all_skt_hint_mask_file)
+all_skt_hint_mask_file.close()
+all_skt_hint_mask = np.array(all_skt_hint_mask_ts)
 
 
 
