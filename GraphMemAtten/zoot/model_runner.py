@@ -311,7 +311,7 @@ def model_running(model, ds, decode_mode):
 #   while True:
 #     try:
   for next_element in ds:
-    batch_token_loss, batch_token_accuracy, batch_token_count, batch_t0_token_accuracy, batch_t0_token_count, batch_t1_token_accuracy, batch_t1_token_count = model.batch_train_test(next_element['origin_sequence'], next_element['relative_to_part_first'], next_element['valid_mask'], next_element['token_type'], decode_mode)
+    batch_token_loss, batch_token_accuracy, batch_token_count, batch_t0_token_accuracy, batch_t0_token_count, batch_t1_token_accuracy, batch_t1_token_count = model.batch_train_test(next_element['origin_sequence'], next_element['relative_to_part_first'], next_element['valid_mask'], next_element['parent_hint'], next_element['token_type'], decode_mode)
     all_token_loss += batch_token_loss
     all_token_accuracy += np.asarray(batch_token_accuracy, np_float_type)
     all_token_count += batch_token_count

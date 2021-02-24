@@ -34,7 +34,7 @@ class BatchTrainTest(tf.keras.Model):
     if compute_beam:
       self.one_seq_beam = OneSeqBeam(self.transformer_model, self.multi_decode_model)# self.multi_position_transfer
   
-  def batch_train_test(self, origin_sequence, relative_to_part_first, valid_mask, token_type, decode_mode):
+  def batch_train_test(self, origin_sequence, relative_to_part_first, valid_mask, parent_hint, token_type, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''
 #     print(origin_sequence)
     ori_sequence = origin_sequence[0:-1,:]
@@ -43,6 +43,7 @@ class BatchTrainTest(tf.keras.Model):
     tgt_sequence = origin_sequence[1:,:]
     r_relative_to_part_first = relative_to_part_first[1:,:]
     r_valid_mask = valid_mask[1:,:]
+    r_parent_hint = parent_hint[1:,:]
     r_token_type = token_type[1:,:]
     seq_len = np.shape(ori_sequence)[0]
 #     print("seq_len:" + str(seq_len))
@@ -67,22 +68,23 @@ class BatchTrainTest(tf.keras.Model):
       part_tgt_sequence = tgt_sequence[i:i_end,:]
       part_relative_to_part_first = r_relative_to_part_first[i:i_end,:]
       part_valid_mask = r_valid_mask[i:i_end,:]
+      part_parent_hint = r_parent_hint[i:i_end,:]
       part_token_type = r_token_type[i:i_end,:]
       with tf.device("/gpu:0"):
         if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
             with tf.GradientTape() as tape:
               if decode_mode == multi_infer_train:
-                all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, is_training=True)
+                all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, part_parent_hint, is_training=True)
               elif decode_mode == standard_infer_train:
-                _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=True)
+                _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, part_parent_hint, is_training=True)
               else:
                 assert False
         else:
           assert decode_mode == standard_infer_test or decode_mode == multi_infer_test
           if decode_mode == multi_infer_test:
-            all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, is_training=False)
+            all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, part_parent_hint, is_training=False)
           elif decode_mode == standard_infer_test:
-            _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, is_training=False)
+            _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, part_parent_hint, is_training=False)
           else:
             assert False
 #       print("loss:" + str(loss))

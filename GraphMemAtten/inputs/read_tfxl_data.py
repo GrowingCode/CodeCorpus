@@ -12,6 +12,8 @@ def parse_function(example_proto):
             'relative_to_part_first_shape': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
             'valid_mask': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
             'valid_mask_shape': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
+            'parent_hint': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
+            'parent_hint_shape': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
             'seq_part_skip': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
             'seq_part_skip_shape': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
             'token_type': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
@@ -27,6 +29,8 @@ def parse_function(example_proto):
   parsed_example['relative_to_part_first_shape'] = tf.io.decode_raw(parsed_example['relative_to_part_first_shape'], int_type)
   parsed_example['valid_mask'] = tf.io.decode_raw(parsed_example['valid_mask'], int_type)
   parsed_example['valid_mask_shape'] = tf.io.decode_raw(parsed_example['valid_mask_shape'], int_type)
+  parsed_example['parent_hint'] = tf.io.decode_raw(parsed_example['parent_hint'], int_type)
+  parsed_example['parent_hint_shape'] = tf.io.decode_raw(parsed_example['parent_hint_shape'], int_type)
   parsed_example['seq_part_skip'] = tf.io.decode_raw(parsed_example['seq_part_skip'], int_type)
   parsed_example['seq_part_skip_shape'] = tf.io.decode_raw(parsed_example['seq_part_skip_shape'], int_type)
   parsed_example['token_type'] = tf.io.decode_raw(parsed_example['token_type'], int_type)
@@ -39,6 +43,7 @@ def parse_function(example_proto):
   parsed_example['origin_sequence'] = tf.reshape(parsed_example['origin_sequence'], parsed_example['origin_sequence_shape'])
   parsed_example['relative_to_part_first'] = tf.reshape(parsed_example['relative_to_part_first'], parsed_example['relative_to_part_first_shape'])
   parsed_example['valid_mask'] = tf.reshape(parsed_example['valid_mask'], parsed_example['valid_mask_shape'])
+  parsed_example['parent_hint'] = tf.reshape(parsed_example['parent_hint'], parsed_example['parent_hint_shape'])
   parsed_example['seq_part_skip'] = tf.reshape(parsed_example['seq_part_skip'], parsed_example['seq_part_skip_shape'])
   parsed_example['token_type'] = tf.reshape(parsed_example['token_type'], parsed_example['token_type_shape'])
   parsed_example['origin_sequence_exact'] = tf.reshape(parsed_example['origin_sequence_exact'], parsed_example['origin_sequence_exact_shape'])
