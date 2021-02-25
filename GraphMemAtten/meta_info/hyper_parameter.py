@@ -1,5 +1,6 @@
 from meta_info.non_hyper_constant import data_dir, skeleton_pe,\
-  skeleton_one, skeleton_e, debug_assert
+  skeleton_one, skeleton_e, debug_assert, all_skt_e_parent_hint_mask,\
+  all_skt_pe_parent_hint_mask, all_skt_one_parent_hint_mask
 import json
 import tensorflow as tf
 
@@ -63,12 +64,15 @@ all_skt_tensor_summary_file.close()
 if skeleton_mode == skeleton_one:
   n_skt = all_token_summary_ts["SkeletonHitNum"]
   multi_infer_num = max(all_skt_tensor_summary_ts["max_skt_number_of_one_statement"], all_skt_tensor_summary_ts["max_token_number_of_one_statement"])
+  all_skt_hint_mask = all_skt_one_parent_hint_mask
 elif skeleton_mode == skeleton_pe:
   n_skt = all_token_summary_ts["SkeletonPEHitNum"]
   multi_infer_num = max(all_skt_tensor_summary_ts["max_skt_number_of_pe_statement"], all_skt_tensor_summary_ts["max_token_number_of_pe_statement"])
+  all_skt_hint_mask = all_skt_pe_parent_hint_mask
 elif skeleton_mode == skeleton_e:
   n_skt = all_token_summary_ts["SkeletonEachHitNum"]
   multi_infer_num = max(all_skt_tensor_summary_ts["max_skt_number_of_e_statement"], all_skt_tensor_summary_ts["max_token_number_of_e_statement"])
+  all_skt_hint_mask = all_skt_e_parent_hint_mask
 else:
   assert False
   

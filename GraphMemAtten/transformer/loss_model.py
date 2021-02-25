@@ -1,7 +1,8 @@
 import tensorflow as tf
-from meta_info.non_hyper_constant import top_ks, all_skt_hint_mask, debug_assert,\
+from meta_info.non_hyper_constant import top_ks, debug_assert,\
   int_type
-from meta_info.hyper_parameter import d_model, n_token, d_embed, n_token_one_hot
+from meta_info.hyper_parameter import d_model, n_token, d_embed, n_token_one_hot,\
+  all_skt_hint_mask
 from utils.initialize_util import random_normal_variable_initializer,\
   zero_variable_initializer
 
@@ -15,6 +16,7 @@ class LossCalculator(tf.keras.Model):
       self.proj_w = tf.Variable(random_normal_variable_initializer([d_embed, d_model]))
     self.token_output_w = tf.Variable(random_normal_variable_initializer([n_token, d_model]))
     self.token_output_softmax_b = tf.Variable(zero_variable_initializer([n_token]))
+    
   
   # return_mean=True
   def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, parent_hint, compute_prediction, train_to_predict_unk=False):
