@@ -87,6 +87,12 @@ meta_of_app_handle_ts = json.load(meta_of_app_handle_file)
 meta_of_app_handle_file.close()
 project_size = meta_of_app_handle_ts["ProjectSize"]
 
+''' initialize parent_info_length '''
+meta_of_ast2tensor_file = open(meta_dir + "/meta_of_ast2tensor.json", 'r', encoding='UTF-8')
+meta_of_ast2tensor_ts = json.load(meta_of_ast2tensor_file)
+meta_of_ast2tensor_file.close()
+parent_info_length = meta_of_ast2tensor_ts["ParentInfoLength"]
+
 all_skt_one_to_each_file = open(data_dir + "/All_skt_one_to_each.json", 'r', encoding='UTF-8')
 all_skt_one_to_each_ts = json.load(all_skt_one_to_each_file)
 all_skt_one_to_each_file.close()
@@ -122,6 +128,56 @@ all_skt_e_parent_hint_mask_file = open(data_dir + "/All_skt_e_parent_hint_mask.j
 all_skt_e_parent_hint_mask_ts = json.load(all_skt_e_parent_hint_mask_file)
 all_skt_e_parent_hint_mask_file.close()
 all_skt_e_parent_hint_mask = np.array(all_skt_e_parent_hint_mask_ts)
+
+''' skt_h_num  key_is_string_int '''
+all_skeleton_h_num_file = open(data_dir + "/All_skeleton_h_num.json", 'r', encoding='UTF-8')
+all_skeleton_h_num = json.load(all_skeleton_h_num_file)
+all_skeleton_h_num_file.close()
+# all_skeleton_h_num = np.array(all_skeleton_h_num_ts)
+
+all_skeleton_pe_h_num_file = open(data_dir + "/All_skeleton_pe_h_num.json", 'r', encoding='UTF-8')
+all_skeleton_pe_h_num = json.load(all_skeleton_pe_h_num_file)
+all_skeleton_pe_h_num_file.close()
+# all_skeleton_pe_h_num = np.array(all_skeleton_pe_h_num_ts)
+
+all_skeleton_each_h_num_file = open(data_dir + "/All_skeleton_each_h_num.json", 'r', encoding='UTF-8')
+all_skeleton_each_h_num = json.load(all_skeleton_each_h_num_file)
+all_skeleton_each_h_num_file.close()
+# all_skeleton_each_h_num = np.array(all_skeleton_each_h_num_ts)
+
+''' skt_parent_hint to id '''
+all_skt_one_par_hint_str_id_file = open(data_dir + "/All_skt_one_par_hint_str_id.json", 'r', encoding='UTF-8')
+all_skt_one_par_hint_str_id = json.load(all_skt_one_par_hint_str_id_file)
+all_skt_one_par_hint_str_id_file.close()
+# all_skt_one_par_hint_str_id = np.array(all_skt_one_par_hint_str_id_ts)
+
+all_skt_pe_par_hint_str_id_file = open(data_dir + "/All_skt_pe_par_hint_str_id.json", 'r', encoding='UTF-8')
+all_skt_pe_par_hint_str_id = json.load(all_skt_pe_par_hint_str_id_file)
+all_skt_pe_par_hint_str_id_file.close()
+# all_skt_pe_par_hint_str_id = np.array(all_skt_pe_par_hint_str_id_ts)
+
+all_skt_e_par_hint_str_id_file = open(data_dir + "/All_skt_e_par_hint_str_id.json", 'r', encoding='UTF-8')
+all_skt_e_par_hint_str_id = json.load(all_skt_e_par_hint_str_id_file)
+all_skt_e_par_hint_str_id_file.close()
+# all_skt_e_par_hint_str_id = np.array(all_skt_e_par_hint_str_id_ts)
+
+''' skt_id to skt_str key_is_string_int '''
+all_skeleton_id_str_file = open(data_dir + "/All_skeleton_id.json", 'r', encoding='UTF-8')
+all_skeleton_id_str = json.load(all_skeleton_id_str_file)
+all_skeleton_id_str_file.close()
+
+all_skeleton_pe_id_str_file = open(data_dir + "/All_skeleton_pe_id.json", 'r', encoding='UTF-8')
+all_skeleton_pe_id_str = json.load(all_skeleton_pe_id_str_file)
+all_skeleton_pe_id_str_file.close()
+
+all_skeleton_each_id_str_file = open(data_dir + "/All_skeleton_each_id.json", 'r', encoding='UTF-8')
+all_skeleton_each_id_str = json.load(all_skeleton_each_id_str_file)
+all_skeleton_each_id_str_file.close()
+
+
+
+
+
 
 
 
