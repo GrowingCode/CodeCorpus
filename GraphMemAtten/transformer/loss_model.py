@@ -16,17 +16,19 @@ class LossCalculator(tf.keras.Model):
       self.proj_w = tf.Variable(random_normal_variable_initializer([d_embed, d_model]))
     self.token_output_w = tf.Variable(random_normal_variable_initializer([n_token, d_model]))
     self.token_output_softmax_b = tf.Variable(zero_variable_initializer([n_token]))
-    
   
-  # return_mean=True
-  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, parent_hint, compute_prediction, train_to_predict_unk=False):
-    
+  def logit_with_parent_hint(self, hidden, parent_hint):
 #     prediction_mask = tf.gather(hint_mask, parent_hint)
     prediction_mask = tf.nn.embedding_lookup(all_skt_hint_mask, parent_hint)
     ''' ['tf.shape(prediction_mask):', [128 6 27]] '''
     output = generate_logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
-    
     r_output = tf.where(tf.equal(prediction_mask, 1), output, -1e30*tf.ones_like(output))
+    return prediction_mask, r_output
+  
+  # return_mean=True
+  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, parent_hint, compute_prediction, train_to_predict_unk=False):
+    
+    prediction_mask, r_output = self.logit_with_parent_hint(hidden, parent_hint)
     
     if debug_assert:
       o_hot = tf.nn.embedding_lookup(n_token_one_hot, target)
@@ -61,16 +63,17 @@ class LossCalculator(tf.keras.Model):
     probs, predictions = None, None
     if compute_prediction:
       ''' ['tf.shape(predictions):', [128 6 top_ks[-1]]] '''
-      t_probs = tf.math.log(tf.nn.softmax(output, axis=2))
+      t_probs = tf.math.log(tf.nn.softmax(r_output, axis=2))
       probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
 #     print("r_nll:" + str(r_nll))
     return probs, predictions, r_nll_sum
   
-  def only_compute_predictions(self, t_h):
+  def only_compute_predictions(self, t_h, parent_hint):
     ''' t_h shape: [tgt_size, batch_size, feature_size] actually [1, 1, feature_size] '''
     ''' predictions shape: [tgt_size, batch_size, top_ks[-1]] '''
-    output = generate_logit(t_h, self.token_output_w, self.token_output_softmax_b, self.proj_w)
-    t_probs = tf.math.log(tf.nn.softmax(output, axis=2))
+    _, r_output = self.logit_with_parent_hint(t_h, parent_hint)
+    
+    t_probs = tf.math.log(tf.nn.softmax(r_output, axis=2))
     probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
     return probs, predictions
 

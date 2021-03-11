@@ -4,6 +4,8 @@ import os
 import json
 
 
+skt_dft = "$Dft_"
+
 standard_infer = "standard_infer"
 multi_infer = "multi_infer"
 

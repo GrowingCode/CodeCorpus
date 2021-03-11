@@ -1,20 +1,19 @@
 from meta_info.hyper_parameter import oracle_mem_len, n_layer, \
-  oracle_tgt_len, accuracy_based_on_whole, multi_infer_num,\
-  memory_train_test_beam_consistent, additional_filter_memory_when_beam_step_inferring,\
-  all_skt_h_num
+  oracle_tgt_len, accuracy_based_on_whole, multi_infer_num, \
+  memory_train_test_beam_consistent, additional_filter_memory_when_beam_step_inferring, \
+  all_skt_h_num, all_skt_id_to_str, all_skt_par_hint_to_id
 from meta_info.non_hyper_constant import int_type, float_type, top_ks, \
-  standard_infer_test, multi_infer_test, debug_in_test_beam, np_int_type,\
-  parent_info_length
+  standard_infer_test, multi_infer_test, debug_in_test_beam, np_int_type, \
+  parent_info_length, skt_dft
+import numpy as np
 import tensorflow as tf
 from utils.accuracy_util import compute_accuracy_of_sequences
 from utils.cartesian_util import batch_cartesian_add_each_scalar_in_vect, \
   batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect
-from utils.dynamic_program_util import dp_compute_en_seqs_from_distinct_parallel_tokens
 from utils.memory_util import get_recent_fixed_length_memory, \
   update_recent_fixed_length_memory, get_specified_varied_length_memory
 from utils.meta_util import get_varied_memory_shape_in_while_loop
-import numpy as np
-from utils.unit_expand_util import get_unit_expand_sequence,\
+from utils.unit_expand_util import get_unit_expand_sequence, \
   get_unit_expand_sequence_list, replace_unk_with_none_in_list
 
 
@@ -324,6 +323,8 @@ class OneSeqBeam():
 #       o_log_probs = tf.concat([o_log_probs, [o_log_probs_of_this_node]], axis=0)
 #       o_ens = tf.concat([o_ens, [o_ens_of_this_node]], axis=0)
 #       return (i+1, i_len, o_log_probs, o_ens)
+    one_computed_en_seq = []
+    computed_en_seqs = [one_computed_en_seq]
     
     r_steps = tf.cast(tf.minimum(multi_infer_num, steps), int_type)
     np_r_steps = r_steps.numpy()
@@ -344,29 +345,66 @@ class OneSeqBeam():
       transfer_i = tf.expand_dims(tf.expand_dims(i, 0), 1)
       t_h = self.multi_decode_model.multi_position_transfer.transfer(transfer_i, output)
       ''' t_h shape: [1, 1, feature_size] '''
-      _, o_ens_of_this_node = self.multi_decode_model.loss_calculator.only_compute_predictions(t_h)
+      
+      par_hint_str = "";
+      compensate_size = parent_info_length - len(en_stack)
+      if (compensate_size > 0):
+        t = 0
+        while (t < compensate_size):
+          par_hint_str += (skt_dft + ":0#")
+          t += 1
+      ot = max(0, len(en_stack) - parent_info_length)
+      while (ot < len(en_stack)):
+        en = en_stack[ot]
+        en_str = all_skt_id_to_str[en]
+        par_hint_str += en_str + ":" + str(h_index_stack[ot]) + "#"
+        ot += 1
+      
+      if par_hint_str in all_skt_par_hint_to_id:
+        par_hint_id = all_skt_par_hint_to_id[par_hint_str]
+      else:
+        par_hint_id = 0
+      
+      par_hint = [[[par_hint_id]]]
+      _, o_ens_of_this_node = self.multi_decode_model.loss_calculator.only_compute_predictions(t_h, par_hint)
       guide_en_tf = o_ens_of_this_node[0][0][guide]
       guide_en = guide_en_tf.numpy()
+      one_computed_en_seq.append(guide_en)
       
+      ''' prepare append '''
       if (i > 0):
         j = i - 1
-        assert en_stack.size() - 1 == j
+        assert len(en_stack) - 1 == j
         h_index_stack[-1] += 1
       
+      ''' handle back-trace, may back a few steps '''
       en_stack.append(guide_en)
       h_index_stack.append(-1)
       h_num = all_skt_h_num[guide_en]
       h_num_stack.append(h_num)
-        
       
-      i++
+      if (h_num == 0):
+        ''' begin back trace and delete '''
+        s_last = len(h_num_stack) - 1
+        while (s_last >= 0):
+          if (h_num_stack[s_last] >= h_index_stack[s_last] + 1):# or h_num_stack[s_last] == 0
+            h_num_stack.pop()
+            h_index_stack.pop()
+            en_stack.pop()
+            s_last-=1
+          else:
+            break;
+        assert len(h_index_stack) - 1 == s_last
+        h_index_stack[-1] += 1
+      
+      i+=1
     
-    i = tf.constant(0, int_type)
-    o_log_probs = tf.zeros([0, top_ks[-1]], float_type)
-    o_ens = tf.zeros([0, top_ks[-1]], int_type)
-    _, _, o_log_probs, o_ens = tf.while_loop(multi_infer_cond, multi_infer_body, [i, r_steps, o_log_probs, o_ens], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, top_ks[-1]]), tf.TensorShape([None, top_ks[-1]])], parallel_iterations=1)
-    _, computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
-    ''' ensure computed_en_seqs to shape: [top_ks[-1], steps] '''
+#     i = tf.constant(0, int_type)
+#     o_log_probs = tf.zeros([0, top_ks[-1]], float_type)
+#     o_ens = tf.zeros([0, top_ks[-1]], int_type)
+#     _, _, o_log_probs, o_ens = tf.while_loop(multi_infer_cond, multi_infer_body, [i, r_steps, o_log_probs, o_ens], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, top_ks[-1]]), tf.TensorShape([None, top_ks[-1]])], parallel_iterations=1)
+#     _, computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
+#     ''' ensure computed_en_seqs to shape: [top_ks[-1], steps] '''
     
     left_steps = steps - r_steps
     assert left_steps <= 0
