@@ -5,6 +5,7 @@ import json
 
 
 skt_dft = "$Dft_"
+unk_id = 1
 
 standard_infer = "standard_infer"
 multi_infer = "multi_infer"

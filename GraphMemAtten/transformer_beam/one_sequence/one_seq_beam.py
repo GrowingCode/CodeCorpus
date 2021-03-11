@@ -4,7 +4,7 @@ from meta_info.hyper_parameter import oracle_mem_len, n_layer, \
   all_skt_h_num, all_skt_id_to_str, all_skt_par_hint_to_id
 from meta_info.non_hyper_constant import int_type, float_type, top_ks, \
   standard_infer_test, multi_infer_test, debug_in_test_beam, np_int_type, \
-  parent_info_length, skt_dft
+  parent_info_length, skt_dft, unk_id
 import numpy as np
 import tensorflow as tf
 from utils.accuracy_util import compute_accuracy_of_sequences
@@ -363,7 +363,7 @@ class OneSeqBeam():
       if par_hint_str in all_skt_par_hint_to_id:
         par_hint_id = all_skt_par_hint_to_id[par_hint_str]
       else:
-        par_hint_id = 0
+        par_hint_id = unk_id
       
       par_hint = [[[par_hint_id]]]
       _, o_ens_of_this_node = self.multi_decode_model.loss_calculator.only_compute_predictions(t_h, par_hint)
