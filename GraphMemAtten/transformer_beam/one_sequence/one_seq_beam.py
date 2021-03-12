@@ -1,18 +1,15 @@
-from meta_info.hyper_parameter import oracle_mem_len, n_layer, \
-  oracle_tgt_len, accuracy_based_on_whole, multi_infer_num, \
-  memory_train_test_beam_consistent, additional_filter_memory_when_beam_step_inferring, \
-  all_skt_h_num, all_skt_id_to_str, all_skt_par_hint_to_id
-from meta_info.non_hyper_constant import int_type, float_type, top_ks, \
-  standard_infer_test, multi_infer_test, debug_in_test_beam, np_int_type, \
-  parent_info_length, skt_dft, unk_id
+from meta_info.hyper_parameter import oracle_mem_len, \
+  oracle_tgt_len, accuracy_based_on_whole, \
+  memory_train_test_beam_consistent
+from meta_info.non_hyper_constant import int_type, float_type, \
+  standard_infer_test, multi_infer_test, debug_in_test_beam
 import numpy as np
 import tensorflow as tf
+from transformer_beam.one_sequence.one_step.one_step_infer import OneStepMultiInfer, \
+  OneStepStandInfer, framework_infer
 from utils.accuracy_util import compute_accuracy_of_sequences
-from utils.cartesian_util import batch_cartesian_add_each_scalar_in_vect, \
-  batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect
 from utils.memory_util import get_recent_fixed_length_memory, \
   update_recent_fixed_length_memory, get_specified_varied_length_memory
-from utils.meta_util import get_varied_memory_shape_in_while_loop
 from utils.unit_expand_util import get_unit_expand_sequence, \
   get_unit_expand_sequence_list, replace_unk_with_none_in_list
 
@@ -147,7 +144,7 @@ class OneSeqBeam():
 #     print("r_part_seq_exact:" + str(r_part_seq_exact))
     with tf.device('/gpu:0'):
       if decode_mode == standard_infer_test:
-        inferred_ens = self.infer(mems_before_last, last_token_before_part_seq, predict_len)
+        inferred_ens = self.stand_infer(mems_before_last, last_token_before_part_seq, predict_len)
       elif decode_mode == multi_infer_test:
         inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, predict_len)
       else:
@@ -175,87 +172,87 @@ class OneSeqBeam():
 #     print("inferred_ens:" + str(inferred_ens) + "#last_token_before_part_seq:" + str(last_token_before_part_seq) + "#part_seq:" + str(part_seq))
     return skt_f_each_acc, skt_f_whole_acc, skt_f_count, token_f_each_acc, token_f_whole_acc, token_f_count
   
-  def infer(self, mems_before_last, last_token, steps, initial_batch_size_is_one=True, initial_probs=None, initial_ens=None):
-    ''' if the following 1 means batch_size, then it may be top_ks[-1] if initial_batch_size_is_one==False '''
-    ''' last_token shape: [1, 1] (or [1, batch_size]) '''
-    ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
-    ''' here mems_before_last shape should be extended to [n_layer memory_length batch_size feature_size] '''
-    r_steps = steps
-#     tf.cast(tf.minimum(multi_infer_num, steps), int_type)
-    
-    def infer_cond(i, *_):
-      return tf.less(i, r_steps)
-    
-    def infer_body(i, probs, ens, l_token, *mems_tuple):
-      ''' in the following, batch_size should be top_ks[-1]]] '''
-      ''' probs shape should be [batch_size] '''
-      ''' ens shape should be [batch_size, varied_with_max_length_(steps + 1 or >> 1) ] '''
-      ''' l_token shape should be [1, batch_size] '''
-      mems = list(mems_tuple)
-      ''' mems shape should be [n_layer memory_length batch_size feature_size] '''
-      _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(l_token, tf.zeros_like(l_token)-1, mems, tf.ones_like(l_token), is_training=False, mem_len=oracle_mem_len)
-      new_mems = update_recent_fixed_length_memory(mems, new_mems)
-      if additional_filter_memory_when_beam_step_inferring:
-        new_mems = get_specified_varied_length_memory(new_mems, -1, oracle_mem_len, memory_train_test_beam_consistent)
-#       print("r_predictions in infer_body:" + str(r_predictions))
-      ''' probs          should be [1, batch_size, top_ks[-1]] '''
-      ''' predictions    should be [1, batch_size, top_ks[-1]] '''
-      r_probs = tf.squeeze(r_probs, [0])
-      r_predictions = tf.squeeze(r_predictions, [0])
-      ''' r_predictions should be [batch_size, top_ks[-1]] '''
-      
-      new_probs = batch_cartesian_add_each_scalar_in_vect(probs, r_probs)
-      new_ens = batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect(ens, r_predictions)
-#       print("tf.shape(new_ens):" + str(tf.shape(new_ens)))
-      ''' new_probs should be [batch_size * top_ks[-1]] '''
-      ''' new_ens should be [batch_size * top_ks[-1], varied_with_max_length_steps + 1] '''
-      
-      probs_values, probs_indices = tf.nn.top_k(new_probs, top_ks[-1])
-      ens_values = tf.gather(new_ens, probs_indices)
-      
-      ''' update memory '''
-      mems_indices = tf.math.floordiv(probs_indices, top_ks[-1])
-      for j in range(n_layer):
-        new_mems[j] = tf.gather(new_mems[j], mems_indices, axis=1)
-      
-      last_col_ens = tf.expand_dims(ens_values[:, -1], axis=0)
-      return (i+1, probs_values, ens_values, last_col_ens, *new_mems)
-    
-    if not initial_batch_size_is_one:
-      i = tf.constant(0, int_type)
-      probs = initial_probs# tf.zeros([top_ks[-1]], float_type)
-      ens = initial_ens# tf.zeros([top_ks[-1], 0], int_type)
-      l_token = last_token
-      wloop_mems = mems_before_last
-#       print(tf.shape(wloop_mems))
-    else:
-      _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, tf.ones_like(last_token), is_training=False, mem_len=oracle_mem_len)
-      new_mems = update_recent_fixed_length_memory(mems_before_last, new_mems)
-      if additional_filter_memory_when_beam_step_inferring:
-        new_mems = get_specified_varied_length_memory(new_mems, -1, oracle_mem_len, memory_train_test_beam_consistent)
-#       print("r_predictions out infer_body:" + str(r_predictions))
-      i = tf.constant(1, int_type)
-      probs = tf.squeeze(r_probs, axis=[0, 1])
-      raw_ens = tf.squeeze(r_predictions, axis=[0, 1])
-      ens = tf.expand_dims(raw_ens, axis=1)
-      l_token = tf.expand_dims(raw_ens, axis=0)
-#     i_len = tf.constant(steps, int_type)
-#     probs = tf.zeros([top_ks[-1]], float_type)
-#     ens = tf.zeros([top_ks[-1], 1], int_type) - 1
-      wloop_mems = []
-      for j in range(n_layer):
-        wloop_mems.append(tf.tile(new_mems[j], [1, top_ks[-1], 1]))
-#     last_token = tf.tile(last_token, [1, top_ks[-1]])
-    mems_shapes = get_varied_memory_shape_in_while_loop()
-#     i_len, 
-    _, probs, ens, *_ = tf.while_loop(infer_cond, infer_body, loop_vars=[i, probs, ens, l_token, *wloop_mems], shape_invariants=[tf.TensorShape(()), tf.TensorShape([top_ks[-1]]), tf.TensorShape([top_ks[-1], None]), tf.TensorShape([1, top_ks[-1]]), *mems_shapes], parallel_iterations=1)
-    
-#     print("steps:" + str(steps))
-#     print("tf.shape(ens):" + str(tf.shape(ens)))
-    
-#     ens = tf.slice(ens, [0, 1], [-1, -1])
-#     print("tf.shape(ens):" + str(tf.shape(ens)))
-    return ens
+#   def infer(self, mems_before_last, last_token, steps, initial_batch_size_is_one=True, initial_probs=None, initial_ens=None):
+#     ''' if the following 1 means batch_size, then it may be top_ks[-1] if initial_batch_size_is_one==False '''
+#     ''' last_token shape: [1, 1] (or [1, batch_size]) '''
+#     ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
+#     ''' here mems_before_last shape should be extended to [n_layer memory_length batch_size feature_size] '''
+#     r_steps = steps
+# #     tf.cast(tf.minimum(multi_infer_num, steps), int_type)
+#     
+#     def infer_cond(i, *_):
+#       return tf.less(i, r_steps)
+#     
+#     def infer_body(i, probs, ens, l_token, *mems_tuple):
+#       ''' in the following, batch_size should be top_ks[-1]]] '''
+#       ''' probs shape should be [batch_size] '''
+#       ''' ens shape should be [batch_size, varied_with_max_length_(steps + 1 or >> 1) ] '''
+#       ''' l_token shape should be [1, batch_size] '''
+#       mems = list(mems_tuple)
+#       ''' mems shape should be [n_layer memory_length batch_size feature_size] '''
+#       _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(l_token, tf.zeros_like(l_token)-1, mems, tf.ones_like(l_token), is_training=False, mem_len=oracle_mem_len)
+#       new_mems = update_recent_fixed_length_memory(mems, new_mems)
+#       if additional_filter_memory_when_beam_step_inferring:
+#         new_mems = get_specified_varied_length_memory(new_mems, -1, oracle_mem_len, memory_train_test_beam_consistent)
+# #       print("r_predictions in infer_body:" + str(r_predictions))
+#       ''' probs          should be [1, batch_size, top_ks[-1]] '''
+#       ''' predictions    should be [1, batch_size, top_ks[-1]] '''
+#       r_probs = tf.squeeze(r_probs, [0])
+#       r_predictions = tf.squeeze(r_predictions, [0])
+#       ''' r_predictions should be [batch_size, top_ks[-1]] '''
+#       
+#       new_probs = batch_cartesian_add_each_scalar_in_vect(probs, r_probs)
+#       new_ens = batch_cartesian_concat_one_dim_vect_and_each_scalar_in_vect(ens, r_predictions)
+# #       print("tf.shape(new_ens):" + str(tf.shape(new_ens)))
+#       ''' new_probs should be [batch_size * top_ks[-1]] '''
+#       ''' new_ens should be [batch_size * top_ks[-1], varied_with_max_length_steps + 1] '''
+#       
+#       probs_values, probs_indices = tf.nn.top_k(new_probs, top_ks[-1])
+#       ens_values = tf.gather(new_ens, probs_indices)
+#       
+#       ''' update memory '''
+#       mems_indices = tf.math.floordiv(probs_indices, top_ks[-1])
+#       for j in range(n_layer):
+#         new_mems[j] = tf.gather(new_mems[j], mems_indices, axis=1)
+#       
+#       last_col_ens = tf.expand_dims(ens_values[:, -1], axis=0)
+#       return (i+1, probs_values, ens_values, last_col_ens, *new_mems)
+#     
+#     if not initial_batch_size_is_one:
+#       i = tf.constant(0, int_type)
+#       probs = initial_probs# tf.zeros([top_ks[-1]], float_type)
+#       ens = initial_ens# tf.zeros([top_ks[-1], 0], int_type)
+#       l_token = last_token
+#       wloop_mems = mems_before_last
+# #       print(tf.shape(wloop_mems))
+#     else:
+#       _, r_probs, r_predictions, _, new_mems = self.transformer_model.transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, tf.ones_like(last_token), is_training=False, mem_len=oracle_mem_len)
+#       new_mems = update_recent_fixed_length_memory(mems_before_last, new_mems)
+#       if additional_filter_memory_when_beam_step_inferring:
+#         new_mems = get_specified_varied_length_memory(new_mems, -1, oracle_mem_len, memory_train_test_beam_consistent)
+# #       print("r_predictions out infer_body:" + str(r_predictions))
+#       i = tf.constant(1, int_type)
+#       probs = tf.squeeze(r_probs, axis=[0, 1])
+#       raw_ens = tf.squeeze(r_predictions, axis=[0, 1])
+#       ens = tf.expand_dims(raw_ens, axis=1)
+#       l_token = tf.expand_dims(raw_ens, axis=0)
+# #     i_len = tf.constant(steps, int_type)
+# #     probs = tf.zeros([top_ks[-1]], float_type)
+# #     ens = tf.zeros([top_ks[-1], 1], int_type) - 1
+#       wloop_mems = []
+#       for j in range(n_layer):
+#         wloop_mems.append(tf.tile(new_mems[j], [1, top_ks[-1], 1]))
+# #     last_token = tf.tile(last_token, [1, top_ks[-1]])
+#     mems_shapes = get_varied_memory_shape_in_while_loop()
+# #     i_len, 
+#     _, probs, ens, *_ = tf.while_loop(infer_cond, infer_body, loop_vars=[i, probs, ens, l_token, *wloop_mems], shape_invariants=[tf.TensorShape(()), tf.TensorShape([top_ks[-1]]), tf.TensorShape([top_ks[-1], None]), tf.TensorShape([1, top_ks[-1]]), *mems_shapes], parallel_iterations=1)
+#     
+# #     print("steps:" + str(steps))
+# #     print("tf.shape(ens):" + str(tf.shape(ens)))
+#     
+# #     ens = tf.slice(ens, [0, 1], [-1, -1])
+# #     print("tf.shape(ens):" + str(tf.shape(ens)))
+#     return ens
   
 #   def multi_infer(self, mems_before_last, last_token, steps):
 #     ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
@@ -303,114 +300,18 @@ class OneSeqBeam():
 # #       computed_en_seqs = infer_ens# tf.concat([computed_en_seqs, infer_ens], axis=1)
 #     return computed_en_seqs
   
-  def multi_infer(self, mems_before_last, last_token, steps):
-    ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
-    output, _, _, _, _ = self.transformer_model.transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, tf.ones_like(last_token), is_training=0)
-#     all_mems = update_recent_fixed_length_memory(mems_before_last, old_new_mems)
-    ''' output shape should be [predict_length batch_size feature_size] '''
-    ''' output shape should be [1 1 feature_size] '''
-    
-#     def multi_infer_cond(i, i_len, *_):
-#       return tf.less(i, i_len)
-    
-#     def multi_infer_body(i, i_len, o_log_probs, o_ens):
-#       transfer_i = tf.expand_dims(tf.expand_dims(i, 0), 1)
-#       t_h = self.multi_decode_model.multi_position_transfer.transfer(transfer_i, output)
-#       ''' t_h shape: [1, 1, feature_size] '''
-#       o_log_probs_of_this_node, o_ens_of_this_node = self.multi_decode_model.loss_calculator.only_compute_predictions(t_h)
-#       o_log_probs_of_this_node = tf.squeeze(o_log_probs_of_this_node)
-#       o_ens_of_this_node = tf.squeeze(o_ens_of_this_node)
-#       o_log_probs = tf.concat([o_log_probs, [o_log_probs_of_this_node]], axis=0)
-#       o_ens = tf.concat([o_ens, [o_ens_of_this_node]], axis=0)
-#       return (i+1, i_len, o_log_probs, o_ens)
-    one_computed_en_seq = []
-    computed_en_seqs = [one_computed_en_seq]
-    
-    r_steps = tf.cast(tf.minimum(multi_infer_num, steps), int_type)
-    np_r_steps = r_steps.numpy()
-    guide = np.ones([np_r_steps], np_int_type)
-    
-    en_stack = []
-    h_index_stack = []
-    h_num_stack = []
-    
-#     for _ in range(parent_info_length):
-#       en_stack.append(0)
-#       h_index_stack.append(0)
-#       h_num_stack.append(0)
-#     h_index_stack[-1] -= 1
-    
-    i = 0
-    while (i < np_r_steps):
-      transfer_i = tf.expand_dims(tf.expand_dims(i, 0), 1)
-      t_h = self.multi_decode_model.multi_position_transfer.transfer(transfer_i, output)
-      ''' t_h shape: [1, 1, feature_size] '''
-      
-      par_hint_str = "";
-      compensate_size = parent_info_length - len(en_stack)
-      if (compensate_size > 0):
-        t = 0
-        while (t < compensate_size):
-          par_hint_str += (skt_dft + ":0#")
-          t += 1
-      ot = max(0, len(en_stack) - parent_info_length)
-      while (ot < len(en_stack)):
-        en = en_stack[ot]
-        en_str = all_skt_id_to_str[en]
-        par_hint_str += en_str + ":" + str(h_index_stack[ot]) + "#"
-        ot += 1
-      
-      if par_hint_str in all_skt_par_hint_to_id:
-        par_hint_id = all_skt_par_hint_to_id[par_hint_str]
-      else:
-        par_hint_id = unk_id
-      
-      par_hint = [[[par_hint_id]]]
-      _, o_ens_of_this_node = self.multi_decode_model.loss_calculator.only_compute_predictions(t_h, par_hint)
-      guide_en_tf = o_ens_of_this_node[0][0][guide]
-      guide_en = guide_en_tf.numpy()
-      one_computed_en_seq.append(guide_en)
-      
-      ''' prepare append '''
-      if (i > 0):
-        j = i - 1
-        assert len(en_stack) - 1 == j
-        h_index_stack[-1] += 1
-      
-      ''' handle back-trace, may back a few steps '''
-      en_stack.append(guide_en)
-      h_index_stack.append(-1)
-      h_num = all_skt_h_num[guide_en]
-      h_num_stack.append(h_num)
-      
-      if (h_num == 0):
-        ''' begin back trace and delete '''
-        s_last = len(h_num_stack) - 1
-        while (s_last >= 0):
-          if (h_num_stack[s_last] >= h_index_stack[s_last] + 1):# or h_num_stack[s_last] == 0
-            h_num_stack.pop()
-            h_index_stack.pop()
-            en_stack.pop()
-            s_last-=1
-          else:
-            break;
-        assert len(h_index_stack) - 1 == s_last
-        h_index_stack[-1] += 1
-      
-      i+=1
-    
-#     i = tf.constant(0, int_type)
-#     o_log_probs = tf.zeros([0, top_ks[-1]], float_type)
-#     o_ens = tf.zeros([0, top_ks[-1]], int_type)
-#     _, _, o_log_probs, o_ens = tf.while_loop(multi_infer_cond, multi_infer_body, [i, r_steps, o_log_probs, o_ens], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, top_ks[-1]]), tf.TensorShape([None, top_ks[-1]])], parallel_iterations=1)
-#     _, computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
-#     ''' ensure computed_en_seqs to shape: [top_ks[-1], steps] '''
-    
-    left_steps = steps - r_steps
-    assert left_steps <= 0
-    return computed_en_seqs
-    
-    
+def stand_infer(self, mems_before_last, last_token, steps):
+  inferrer = OneStepStandInfer(mems_before_last, last_token, steps)
+  return framework_infer(steps, inferrer)
+
+def multi_infer(self, mems_before_last, last_token, steps):
+  inferrer = OneStepMultiInfer(mems_before_last, last_token, steps)
+  return framework_infer(steps, inferrer) # mems_before_last, last_token, 
+  
+
+
+
+
 
 
 
