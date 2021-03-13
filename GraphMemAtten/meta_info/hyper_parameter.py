@@ -1,5 +1,5 @@
 from meta_info.non_hyper_constant import data_dir, skeleton_pe,\
-  skeleton_one, skeleton_e, debug_assert, all_skt_e_parent_hint_mask,\
+  skeleton_one, skeleton_e, all_skt_e_parent_hint_mask,\
   all_skt_pe_parent_hint_mask, all_skt_one_parent_hint_mask,\
   all_skeleton_each_h_num, all_skeleton_pe_h_num, all_skeleton_h_num,\
   all_skt_e_par_hint_str_id, all_skt_pe_par_hint_str_id,\
@@ -95,8 +95,8 @@ multi_infer_num = multi_infer_num + 10
 
 print("n_token:" + str(n_token) + "#multi_infer_num:" + str(multi_infer_num) + "#SkeletonTokenHitNum:" + str(all_token_summary_ts["SkeletonTokenHitNum"]) + "#SktAccordingNum:" + str(n_token - 1 - all_token_summary_ts["SkeletonTokenHitNum"]))
 
-if debug_assert:
-  n_token_one_hot = tf.linalg.diag(tf.ones([n_token]))
+# if debug_assert:
+n_token_one_hot = tf.linalg.diag(tf.ones([n_token]))
 
 
 
