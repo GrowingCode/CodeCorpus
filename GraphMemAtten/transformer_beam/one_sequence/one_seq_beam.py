@@ -165,7 +165,7 @@ class OneSeqBeam():
 #       else:
 #         assert False
 #       r_part_seq_len = len(r_part_seq_exact)
-      r_inferred_ens = get_unit_expand_sequence_list(inferred_ens.numpy().tolist(), final_trim_len)
+      r_inferred_ens = get_unit_expand_sequence_list(inferred_ens, final_trim_len)
       r_part_seq_exact = replace_unk_with_none_in_list(get_unit_expand_sequence(part_seq_exact.numpy().tolist(), -1))
 #       print("r_inferred_ens:" + str(r_inferred_ens))
       skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_accuracy_of_sequences(r_inferred_ens, r_part_seq_exact, compute_one_whole=accuracy_based_on_whole)

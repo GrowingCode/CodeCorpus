@@ -130,9 +130,10 @@ def framework_infer(inferrer, steps):
     inferrer.record_just_inferred_en([[guide_en]])
     
     ''' prepare append '''
-    if (i > 0):
-      j = i - 1
-      assert len(en_stack) - 1 == j
+#     if (i > 0):
+#       j = i - 1
+#       assert len(en_stack) - 1 == j, "len(en_stack)-1:" + str(len(en_stack) - 1) + "#j:" + str(j)
+    if (len(h_index_stack) > 0):
       h_index_stack[-1] += 1
     
     ''' handle back-trace, may back a few steps '''
