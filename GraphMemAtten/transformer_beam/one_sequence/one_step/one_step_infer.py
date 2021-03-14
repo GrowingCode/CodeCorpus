@@ -3,7 +3,7 @@ import numpy as np
 from meta_info.hyper_parameter import oracle_mem_len,\
   additional_filter_memory_when_beam_step_inferring,\
   memory_train_test_beam_consistent, all_skt_h_num, all_skt_par_hint_to_id,\
-  all_skt_id_to_str, multi_infer_num
+  all_skt_id_to_str, multi_infer_num, n_skt
 from utils.memory_util import update_recent_fixed_length_memory,\
   get_specified_varied_length_memory
 from meta_info.non_hyper_constant import unk_id, parent_info_length, skt_dft,\
@@ -123,9 +123,9 @@ def framework_infer(inferrer, steps):
 #     with tf.control_dependencies([p_op]):
     _, o_ens_of_this_node = inferrer.get_loss_caculator().only_compute_predictions(t_h, par_hint)
     guide_en_tf = o_ens_of_this_node[0][0][guide[i]]
-    p_op = tf.print("o_ens_of_this_node:", o_ens_of_this_node, "par_hint:", par_hint)
-    with tf.control_dependencies([p_op]):
-      guide_en = guide_en_tf.numpy()
+#     p_op = tf.print("o_ens_of_this_node:", o_ens_of_this_node, "par_hint:", par_hint)
+#     with tf.control_dependencies([p_op]):
+    guide_en = guide_en_tf.numpy()
     one_computed_en_seq.append(guide_en)
     inferrer.record_just_inferred_en([[guide_en]])
     
@@ -139,8 +139,11 @@ def framework_infer(inferrer, steps):
     ''' handle back-trace, may back a few steps '''
     en_stack.append(guide_en)
     h_index_stack.append(-1)
-    print("guide_en:" + str(guide_en))
-    h_num = all_skt_h_num[guide_en]
+#     print("guide_en:" + str(guide_en) + "#n_skt:" + str(n_skt))
+    if guide_en < n_skt:
+      h_num = all_skt_h_num[guide_en]
+    else:
+      h_num = 0
     h_num_stack.append(h_num)
     
     if (h_num == 0):

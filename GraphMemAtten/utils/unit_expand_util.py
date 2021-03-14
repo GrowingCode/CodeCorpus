@@ -4,7 +4,7 @@ from meta_info.non_hyper_constant import skeleton_e, skeleton_pe, skeleton_one,\
 from meta_info.hyper_parameter import skeleton_mode, n_skt
 
 
-def get_unit_expand_sequence(ens, ens_len):
+def get_unit_expand_sequence(ens, ens_len, infer_stage=False):
   need_expand = 0
   if skeleton_mode == skeleton_e:
     pass
@@ -24,7 +24,7 @@ def get_unit_expand_sequence(ens, ens_len):
   seq = []
 #   print("length of ens:" + str(len(ens)))
   for en in ens:
-    if need_expand:
+    if need_expand and ((not infer_stage) or (2 < en < n_skt)):
       en_start = unit_expand_start[en]
       en_end = unit_expand_end[en]
       assert en_end >= en_start, "wrong en:" + str(en)
@@ -50,7 +50,7 @@ def replace_unk_with_none_in_list(lls):
 def get_unit_expand_sequence_list(ens_list, ens_len):
   res = []
   for ens in ens_list:
-    r_ens = get_unit_expand_sequence(ens, ens_len)
+    r_ens = get_unit_expand_sequence(ens, ens_len, infer_stage=True)
     res.append(r_ens)
   return res
     

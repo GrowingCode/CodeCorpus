@@ -89,6 +89,7 @@ elif skeleton_mode == skeleton_e:
 else:
   assert False
   
+assert len(all_skt_h_num) == n_skt, "len(all_skt_h_num):" + str(len(all_skt_h_num)) + "#n_skt:" + str(n_skt)
 n_token = n_skt + all_token_summary_ts["SkeletonTokenHitNum"]
 assert n_token > -1
 multi_infer_num = multi_infer_num + 10
