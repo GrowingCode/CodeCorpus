@@ -81,9 +81,9 @@ class LossCalculator(tf.keras.Model):
     ''' ['tf.shape(prediction_mask):', [128 6 27]] '''
     output = generate_logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
     
-    p_op = tf.print("tf.shape(parent_hint):", tf.shape(parent_hint), "tf.shape(hidden):", tf.shape(hidden), "tf.shape(prediction_mask):", tf.shape(prediction_mask), "tf.shape(output):", tf.shape(output))
-    with tf.control_dependencies([p_op]):
-      r_output = tf.where(tf.equal(prediction_mask, 1), output, -1e30*tf.ones_like(output))
+#     p_op = tf.print("tf.shape(parent_hint):", tf.shape(parent_hint), "tf.shape(hidden):", tf.shape(hidden), "tf.shape(prediction_mask):", tf.shape(prediction_mask), "tf.shape(output):", tf.shape(output))
+#     with tf.control_dependencies([p_op]):
+    r_output = tf.where(tf.equal(prediction_mask, 1), output, -1e30*tf.ones_like(output))
     return prediction_mask, r_output
   
 

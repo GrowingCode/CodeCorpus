@@ -123,7 +123,7 @@ def framework_infer(inferrer, steps):
 #     with tf.control_dependencies([p_op]):
     _, o_ens_of_this_node = inferrer.get_loss_caculator().only_compute_predictions(t_h, par_hint)
     guide_en_tf = o_ens_of_this_node[0][0][guide[i]]
-    p_op = tf.print("tf.shape(o_ens_of_this_node):", tf.shape(o_ens_of_this_node))
+    p_op = tf.print("o_ens_of_this_node:", o_ens_of_this_node, "par_hint:", par_hint)
     with tf.control_dependencies([p_op]):
       guide_en = guide_en_tf.numpy()
     one_computed_en_seq.append(guide_en)
