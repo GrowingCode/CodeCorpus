@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import json
+from utils.dict_util import gen_dict_with_str_key_to_num_key
 
 
 skt_dft = "$Dft_"
@@ -134,17 +135,20 @@ all_skt_e_parent_hint_mask = np.array(all_skt_e_parent_hint_mask_ts)
 
 ''' skt_h_num  key_is_string_int '''
 all_skeleton_h_num_file = open(data_dir + "/All_skeleton_h_num.json", 'r', encoding='UTF-8')
-all_skeleton_h_num = json.load(all_skeleton_h_num_file)
+all_skeleton_h_num_temp = json.load(all_skeleton_h_num_file)
+all_skeleton_h_num = gen_dict_with_str_key_to_num_key(all_skeleton_h_num_temp)
 all_skeleton_h_num_file.close()
 # all_skeleton_h_num = np.array(all_skeleton_h_num_ts)
 
 all_skeleton_pe_h_num_file = open(data_dir + "/All_skeleton_pe_h_num.json", 'r', encoding='UTF-8')
-all_skeleton_pe_h_num = json.load(all_skeleton_pe_h_num_file)
+all_skeleton_pe_h_num_temp = json.load(all_skeleton_pe_h_num_file)
+all_skeleton_pe_h_num = gen_dict_with_str_key_to_num_key(all_skeleton_pe_h_num_temp)
 all_skeleton_pe_h_num_file.close()
 # all_skeleton_pe_h_num = np.array(all_skeleton_pe_h_num_ts)
 
 all_skeleton_each_h_num_file = open(data_dir + "/All_skeleton_each_h_num.json", 'r', encoding='UTF-8')
-all_skeleton_each_h_num = json.load(all_skeleton_each_h_num_file)
+all_skeleton_each_h_num_temp = json.load(all_skeleton_each_h_num_file)
+all_skeleton_each_h_num = gen_dict_with_str_key_to_num_key(all_skeleton_each_h_num_temp)
 all_skeleton_each_h_num_file.close()
 # all_skeleton_each_h_num = np.array(all_skeleton_each_h_num_ts)
 
@@ -166,15 +170,18 @@ all_skt_e_par_hint_str_id_file.close()
 
 ''' skt_id to skt_str key_is_string_int '''
 all_skeleton_id_str_file = open(data_dir + "/All_skeleton_id.json", 'r', encoding='UTF-8')
-all_skeleton_id_str = json.load(all_skeleton_id_str_file)
+all_skeleton_id_str_temp = json.load(all_skeleton_id_str_file)
+all_skeleton_id_str = gen_dict_with_str_key_to_num_key(all_skeleton_id_str_temp)
 all_skeleton_id_str_file.close()
 
 all_skeleton_pe_id_str_file = open(data_dir + "/All_skeleton_pe_id.json", 'r', encoding='UTF-8')
-all_skeleton_pe_id_str = json.load(all_skeleton_pe_id_str_file)
+all_skeleton_pe_id_str_temp = json.load(all_skeleton_pe_id_str_file)
+all_skeleton_pe_id_str = gen_dict_with_str_key_to_num_key(all_skeleton_pe_id_str_temp)
 all_skeleton_pe_id_str_file.close()
 
 all_skeleton_each_id_str_file = open(data_dir + "/All_skeleton_each_id.json", 'r', encoding='UTF-8')
-all_skeleton_each_id_str = json.load(all_skeleton_each_id_str_file)
+all_skeleton_each_id_str_temp = json.load(all_skeleton_each_id_str_file)
+all_skeleton_each_id_str = gen_dict_with_str_key_to_num_key(all_skeleton_each_id_str_temp)
 all_skeleton_each_id_str_file.close()
 
 

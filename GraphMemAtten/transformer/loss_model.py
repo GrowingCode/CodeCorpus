@@ -17,14 +17,6 @@ class LossCalculator(tf.keras.Model):
     self.token_output_w = tf.Variable(random_normal_variable_initializer([n_token, d_model]))
     self.token_output_softmax_b = tf.Variable(zero_variable_initializer([n_token]))
   
-  def logit_with_parent_hint(self, hidden, parent_hint):
-#     prediction_mask = tf.gather(hint_mask, parent_hint)
-    prediction_mask = tf.nn.embedding_lookup(all_skt_hint_mask, parent_hint)
-    ''' ['tf.shape(prediction_mask):', [128 6 27]] '''
-    output = generate_logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
-    r_output = tf.where(tf.equal(prediction_mask, 1), output, -1e30*tf.ones_like(output))
-    return prediction_mask, r_output
-  
   # return_mean=True
   def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, parent_hint, compute_prediction, train_to_predict_unk=False):
     
@@ -37,6 +29,8 @@ class LossCalculator(tf.keras.Model):
       assert result.numpy() == True
 #     nll = None
 #     if not compute_prediction:
+#     p_op = tf.print("tf.shape(hidden):", tf.shape(hidden), "tf.shape(valid_mask):", tf.shape(valid_mask), "tf.shape(parent_hint):", tf.shape(parent_hint), "tf.shape(target):", tf.shape(target), "tf.shape(r_output):", tf.shape(r_output))
+#     with tf.control_dependencies([p_op]):
     nll = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target,
                                                          logits=r_output)
     
@@ -71,12 +65,27 @@ class LossCalculator(tf.keras.Model):
   def only_compute_predictions(self, t_h, parent_hint):
     ''' t_h shape: [tgt_size, batch_size, feature_size] actually [1, 1, feature_size] '''
     ''' predictions shape: [tgt_size, batch_size, top_ks[-1]] '''
+    
     _, r_output = self.logit_with_parent_hint(t_h, parent_hint)
     
+#     p_op = tf.print("tf.shape(t_h):", tf.shape(t_h), "tf.shape(r_output):", tf.shape(r_output))
+#     with tf.control_dependencies([p_op]):
     t_probs = tf.math.log(tf.nn.softmax(r_output, axis=2))
+    
     probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
     return probs, predictions
-
+  
+  def logit_with_parent_hint(self, hidden, parent_hint):
+#     prediction_mask = tf.gather(hint_mask, parent_hint)
+    prediction_mask = tf.nn.embedding_lookup(all_skt_hint_mask, parent_hint)
+    ''' ['tf.shape(prediction_mask):', [128 6 27]] '''
+    output = generate_logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
+    
+    p_op = tf.print("tf.shape(parent_hint):", tf.shape(parent_hint), "tf.shape(hidden):", tf.shape(hidden), "tf.shape(prediction_mask):", tf.shape(prediction_mask), "tf.shape(output):", tf.shape(output))
+    with tf.control_dependencies([p_op]):
+      r_output = tf.where(tf.equal(prediction_mask, 1), output, -1e30*tf.ones_like(output))
+    return prediction_mask, r_output
+  
 
 def generate_logit(x, W, b, proj):
       y = x

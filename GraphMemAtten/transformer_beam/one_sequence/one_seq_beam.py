@@ -21,7 +21,7 @@ class OneSeqBeam():
     self.multi_decode_model = multi_decode_model
     # multi_position_transfer 
   
-  def __call__(self, mems, whole_seq, valid_mask, part_seq_skip, token_type, whole_seq_exact, decode_mode):
+  def __call__(self, mems, whole_seq, valid_mask, parent_hint, part_seq_skip, token_type, whole_seq_exact, decode_mode):
     origin_mems_len = tf.shape(mems[0])[0]
     
     ''' generate stored memory for whole sequence '''
@@ -40,9 +40,12 @@ class OneSeqBeam():
       temp_valid_mask = tf.slice(valid_mask, [idx], [seq_part_size])
       temp_valid_mask = tf.expand_dims(temp_valid_mask, axis=1)
       
+      temp_parent_hint = tf.slice(parent_hint, [idx], [seq_part_size])
+      temp_parent_hint = tf.expand_dims(temp_parent_hint, axis=1)
+      
       temp_mems = get_recent_fixed_length_memory(all_mems, oracle_mem_len)
       
-      _, _, predictions, _, new_mems = self.transformer_model.transformer(dec_inp, target, temp_mems, temp_valid_mask, is_training=0, mem_len=oracle_mem_len)
+      _, _, predictions, _, new_mems = self.transformer_model.transformer(dec_inp, target, temp_mems, temp_valid_mask, temp_parent_hint, is_training=0)#, mem_len=oracle_mem_len
       if debug_in_test_beam:
         print("dec_inp:" + str(tf.squeeze(dec_inp).numpy()) + "#predictions:" + str(tf.squeeze(predictions).numpy()) + "#token_type:" + str(tf.squeeze(token_type).numpy()) + "#valid_mask:" + str(tf.squeeze(valid_mask).numpy()))
       
@@ -144,9 +147,11 @@ class OneSeqBeam():
 #     print("r_part_seq_exact:" + str(r_part_seq_exact))
     with tf.device('/gpu:0'):
       if decode_mode == standard_infer_test:
-        inferred_ens = self.stand_infer(mems_before_last, last_token_before_part_seq, predict_len)
+        inferrer = OneStepStandInfer(self.transformer_model, mems_before_last, last_token_before_part_seq)
+        inferred_ens = framework_infer(inferrer, predict_len)
       elif decode_mode == multi_infer_test:
-        inferred_ens = self.multi_infer(mems_before_last, last_token_before_part_seq, predict_len)
+        inferrer = OneStepMultiInfer(self.transformer_model, self.multi_decode_model, mems_before_last, last_token_before_part_seq)
+        inferred_ens = framework_infer(inferrer, predict_len)
       else:
         assert False
 #     print("inferred_ens.numpy():" + str(inferred_ens.numpy()))
@@ -300,13 +305,7 @@ class OneSeqBeam():
 # #       computed_en_seqs = infer_ens# tf.concat([computed_en_seqs, infer_ens], axis=1)
 #     return computed_en_seqs
   
-def stand_infer(self, mems_before_last, last_token, steps):
-  inferrer = OneStepStandInfer(mems_before_last, last_token, steps)
-  return framework_infer(steps, inferrer)
-
-def multi_infer(self, mems_before_last, last_token, steps):
-  inferrer = OneStepMultiInfer(mems_before_last, last_token, steps)
-  return framework_infer(steps, inferrer) # mems_before_last, last_token, 
+  
   
 
 

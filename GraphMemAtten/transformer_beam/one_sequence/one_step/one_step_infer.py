@@ -12,14 +12,16 @@ from meta_info.non_hyper_constant import unk_id, parent_info_length, skt_dft,\
 
 class OneStepStandInfer():
   
-  def __init__(self, mems_before_last, last_token):
+  def __init__(self, transformer_model, mems_before_last, last_token):
+    self.transformer_model = transformer_model
     self.mems = list(mems_before_last)
     self.l_token = last_token
+#     print("tf.shape(self.l_token):" + str(tf.shape(self.l_token)))
     self.i = -1
   
   def infer_one_step(self):
     self.i += 1
-    output, _, _, _, new_mems = self.transformer_model.transformer(self.l_token, tf.zeros_like(self.l_token)-1, self.mems, tf.ones_like(self.l_token), is_training=False, mem_len=oracle_mem_len)
+    output, _, _, _, new_mems = self.transformer_model.transformer(self.l_token, tf.zeros_like(self.l_token)-1, self.mems, tf.ones_like(self.l_token), tf.ones_like(self.l_token), is_training=False)
     new_mems = update_recent_fixed_length_memory(self.mems, new_mems)
     if additional_filter_memory_when_beam_step_inferring:
       new_mems = get_specified_varied_length_memory(new_mems, -1, oracle_mem_len, memory_train_test_beam_consistent)
@@ -29,11 +31,16 @@ class OneStepStandInfer():
   def record_just_inferred_en(self, inferred_en):
     self.l_token = inferred_en
     
+  def get_loss_caculator(self):
+    return self.transformer_model.loss_calculator
+    
 
 class OneStepMultiInfer():
   
-  def __init__(self, mems_before_last, last_token):
-    output, _, _, _, _ = self.transformer_model.transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, tf.ones_like(last_token), is_training=0)
+  def __init__(self, transformer_model, multi_decode_model, mems_before_last, last_token):
+    self.transformer_model = transformer_model
+    self.multi_decode_model = multi_decode_model
+    output, _, _, _, _ = self.transformer_model.transformer(last_token, tf.zeros_like(last_token)-1, mems_before_last, tf.ones_like(last_token), tf.ones_like(last_token), is_training=0)
     self.output = output
     self.i = -1
   
@@ -45,9 +52,12 @@ class OneStepMultiInfer():
   
   def record_just_inferred_en(self, inferred_en):
     pass
+  
+  def get_loss_caculator(self):
+    return self.multi_decode_model.loss_calculator
 
 
-def framework_infer(self, steps, inferrer):
+def framework_infer(inferrer, steps):
   ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
 #     all_mems = update_recent_fixed_length_memory(mems_before_last, old_new_mems)
   ''' output shape should be [predict_length batch_size feature_size] '''
@@ -88,7 +98,7 @@ def framework_infer(self, steps, inferrer):
     t_h = inferrer.infer_one_step()
     ''' t_h shape: [1, 1, feature_size] '''
     
-    par_hint_str = "";
+    par_hint_str = ""
     compensate_size = parent_info_length - len(en_stack)
     if (compensate_size > 0):
       t = 0
@@ -107,12 +117,17 @@ def framework_infer(self, steps, inferrer):
     else:
       par_hint_id = unk_id
     
-    par_hint = [[[par_hint_id]]]
-    _, o_ens_of_this_node = self.multi_decode_model.loss_calculator.only_compute_predictions(t_h, par_hint)
-    guide_en_tf = o_ens_of_this_node[0][0][guide]
-    guide_en = guide_en_tf.numpy()
+    par_hint = [[par_hint_id]]
+#     print("par_hint:" + str(par_hint))
+#     p_op = tf.print("tf.shape(t_h):", tf.shape(t_h), "tf.shape(par_hint):", tf.shape(par_hint))
+#     with tf.control_dependencies([p_op]):
+    _, o_ens_of_this_node = inferrer.get_loss_caculator().only_compute_predictions(t_h, par_hint)
+    guide_en_tf = o_ens_of_this_node[0][0][guide[i]]
+    p_op = tf.print("tf.shape(o_ens_of_this_node):", tf.shape(o_ens_of_this_node))
+    with tf.control_dependencies([p_op]):
+      guide_en = guide_en_tf.numpy()
     one_computed_en_seq.append(guide_en)
-    inferrer.record_just_inferred_en([[[guide_en]]])
+    inferrer.record_just_inferred_en([[guide_en]])
     
     ''' prepare append '''
     if (i > 0):
@@ -123,6 +138,7 @@ def framework_infer(self, steps, inferrer):
     ''' handle back-trace, may back a few steps '''
     en_stack.append(guide_en)
     h_index_stack.append(-1)
+    print("guide_en:" + str(guide_en))
     h_num = all_skt_h_num[guide_en]
     h_num_stack.append(h_num)
     
@@ -138,7 +154,9 @@ def framework_infer(self, steps, inferrer):
         else:
           break;
       assert len(h_index_stack) - 1 == s_last
-      h_index_stack[-1] += 1
+#       print("len(h_index_stack):" + str(len(h_index_stack)))
+      if len(h_index_stack) > 0:
+        h_index_stack[-1] += 1
     
     i+=1
   
