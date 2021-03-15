@@ -129,16 +129,9 @@ def framework_infer(inferrer, steps):
     one_computed_en_seq.append(guide_en)
     inferrer.record_just_inferred_en([[guide_en]])
     
-    ''' prepare append '''
-#     if (i > 0):
-#       j = i - 1
-#       assert len(en_stack) - 1 == j, "len(en_stack)-1:" + str(len(en_stack) - 1) + "#j:" + str(j)
-    if (len(h_index_stack) > 0):
-      h_index_stack[-1] += 1
-    
     ''' handle back-trace, may back a few steps '''
     en_stack.append(guide_en)
-    h_index_stack.append(-1)
+    h_index_stack.append(0)
 #     print("guide_en:" + str(guide_en) + "#n_skt:" + str(n_skt))
     if guide_en < n_skt:
       h_num = all_skt_h_num[guide_en]
@@ -150,7 +143,7 @@ def framework_infer(inferrer, steps):
       ''' begin back trace and delete '''
       s_last = len(h_num_stack) - 1
       while (s_last >= 0):
-        if (h_num_stack[s_last] >= h_index_stack[s_last] + 1):# or h_num_stack[s_last] == 0
+        if (h_num_stack[s_last] >= h_index_stack[s_last]):# or h_num_stack[s_last] == 0
           h_num_stack.pop()
           h_index_stack.pop()
           en_stack.pop()
