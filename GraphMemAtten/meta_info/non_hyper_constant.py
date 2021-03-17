@@ -168,6 +168,25 @@ all_skt_e_par_hint_str_id = json.load(all_skt_e_par_hint_str_id_file)
 all_skt_e_par_hint_str_id_file.close()
 # all_skt_e_par_hint_str_id = np.array(all_skt_e_par_hint_str_id_ts)
 
+''' id to skt_parent_hint '''
+all_skt_one_par_hint_id_file = open(data_dir + "/All_skt_one_par_hint_id.json", 'r', encoding='UTF-8')
+all_skt_one_par_hint_id_temp = json.load(all_skt_one_par_hint_id_file)
+all_skt_one_par_hint_id = gen_dict_with_str_key_to_num_key(all_skt_one_par_hint_id_temp)
+all_skt_one_par_hint_id_file.close()
+# all_skt_one_par_hint_str_id = np.array(all_skt_one_par_hint_str_id_ts)
+
+all_skt_pe_par_hint_id_file = open(data_dir + "/All_skt_pe_par_hint_id.json", 'r', encoding='UTF-8')
+all_skt_pe_par_hint_id_temp = json.load(all_skt_pe_par_hint_id_file)
+all_skt_pe_par_hint_id = gen_dict_with_str_key_to_num_key(all_skt_pe_par_hint_id_temp)
+all_skt_pe_par_hint_id_file.close()
+# all_skt_pe_par_hint_str_id = np.array(all_skt_pe_par_hint_str_id_ts)
+
+all_skt_e_par_hint_id_file = open(data_dir + "/All_skt_e_par_hint_id.json", 'r', encoding='UTF-8')
+all_skt_e_par_hint_id_temp = json.load(all_skt_e_par_hint_id_file)
+all_skt_e_par_hint_id = gen_dict_with_str_key_to_num_key(all_skt_e_par_hint_id_temp)
+all_skt_e_par_hint_id_file.close()
+# all_skt_e_par_hint_str_id = np.array(all_skt_e_par_hint_str_id_ts)
+
 ''' skt_id to skt_str key_is_string_int '''
 all_skeleton_id_str_file = open(data_dir + "/All_skeleton_id.json", 'r', encoding='UTF-8')
 all_skeleton_id_str_temp = json.load(all_skeleton_id_str_file)

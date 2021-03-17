@@ -4,7 +4,8 @@ from meta_info.non_hyper_constant import data_dir, skeleton_pe,\
   all_skeleton_each_h_num, all_skeleton_pe_h_num, all_skeleton_h_num,\
   all_skt_e_par_hint_str_id, all_skt_pe_par_hint_str_id,\
   all_skt_one_par_hint_str_id, all_skeleton_each_id_str, all_skeleton_pe_id_str,\
-  all_skeleton_id_str
+  all_skeleton_id_str, all_skt_one_par_hint_id, all_skt_pe_par_hint_id,\
+  all_skt_e_par_hint_id
 import json
 import tensorflow as tf
 
@@ -72,6 +73,7 @@ if skeleton_mode == skeleton_one:
   all_skt_hint_mask = all_skt_one_parent_hint_mask
   all_skt_h_num = all_skeleton_h_num
   all_skt_par_hint_to_id = all_skt_one_par_hint_str_id
+  all_skt_par_hint_id = all_skt_one_par_hint_id
   all_skt_id_to_str = all_skeleton_id_str
 elif skeleton_mode == skeleton_pe:
   n_skt = all_token_summary_ts["SkeletonPEHitNum"]
@@ -79,6 +81,7 @@ elif skeleton_mode == skeleton_pe:
   all_skt_hint_mask = all_skt_pe_parent_hint_mask
   all_skt_h_num = all_skeleton_pe_h_num
   all_skt_par_hint_to_id = all_skt_pe_par_hint_str_id
+  all_skt_par_hint_id = all_skt_pe_par_hint_id
   all_skt_id_to_str = all_skeleton_pe_id_str
 elif skeleton_mode == skeleton_e:
   n_skt = all_token_summary_ts["SkeletonEachHitNum"]
@@ -86,6 +89,7 @@ elif skeleton_mode == skeleton_e:
   all_skt_hint_mask = all_skt_e_parent_hint_mask
   all_skt_h_num = all_skeleton_each_h_num
   all_skt_par_hint_to_id = all_skt_e_par_hint_str_id
+  all_skt_par_hint_id = all_skt_e_par_hint_id
   all_skt_id_to_str = all_skeleton_each_id_str
 else:
   assert False

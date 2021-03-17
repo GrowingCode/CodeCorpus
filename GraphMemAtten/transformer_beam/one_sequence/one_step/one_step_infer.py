@@ -57,7 +57,7 @@ class OneStepMultiInfer():
     return self.multi_decode_model.loss_calculator
 
 
-def framework_skt_infer(inferrer, steps):
+def framework_skt_infer(inferrer, parent_hint, steps):  # @UnusedVariable
   ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
 #     all_mems = update_recent_fixed_length_memory(mems_before_last, old_new_mems)
   ''' output shape should be [predict_length batch_size feature_size] '''
@@ -116,6 +116,9 @@ def framework_skt_infer(inferrer, steps):
       par_hint_id = all_skt_par_hint_to_id[par_hint_str]
     else:
       par_hint_id = unk_id
+    
+#     if (parent_hint[i] != par_hint_id):
+#       print("i:" + str(i) + "#parent_hint[i]:" + str(parent_hint[i].numpy()) + "#all_skt_par_hint_id[parent_hint[i]]:" + all_skt_par_hint_id[parent_hint[i].numpy()] + "#par_hint_id:" + str(par_hint_id) + "#all_skt_par_hint_id[par_hint_id]:" + all_skt_par_hint_id[par_hint_id])
     
     par_hint = [[par_hint_id]]
 #     print("par_hint:" + str(par_hint))

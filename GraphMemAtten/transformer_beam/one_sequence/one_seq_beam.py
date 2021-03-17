@@ -155,7 +155,7 @@ class OneSeqBeam():
         assert False
 #     print("inferred_ens.numpy():" + str(inferred_ens.numpy()))
     if e0:
-      inferred_ens = framework_skt_infer(inferrer, predict_len)
+      inferred_ens = framework_skt_infer(inferrer, part_parent_hint, predict_len)
 #       if skeleton_mode == skeleton_e:
 #         skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_accuracy_of_sequences(inferred_ens, part_seq_exact, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
 #       elif skeleton_mode == skeleton_pe:
