@@ -51,7 +51,7 @@ compute_beam = 1
 beam_infer_with_skt_e_full_length = 0
 
 use_simple_multi_infer_mode = 0
-skeleton_mode = skeleton_pe
+skeleton_mode = skeleton_e
 
 origin_train_file = data_dir + "/" + skeleton_mode + "_train_data.txt"
 train_tfxl_tfrecord = data_dir + "/" + skeleton_mode + "_train_tfxl.tfrecord"
