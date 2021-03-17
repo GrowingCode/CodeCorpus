@@ -3,7 +3,7 @@ from meta_info.non_hyper_constant import float_type, int_type, top_ks,\
   top_ks_tensors
 import numpy as np
 from builtins import len
-from meta_info.hyper_parameter import lcs_accuracy_mode
+from meta_info.hyper_parameter import lcs_accuracy_mode, flatten_accuracy_mode
 
 
 # def compute_skt_unit_expand_accuracy_of_sequences(unit_expand_base, unit_expand_start, unit_expand_end, raw_computed_en_seqs, raw_oracle_computed_en_seq, oracle_valid_mask, compute_one_whole=True):
@@ -157,7 +157,7 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
 #   np_seq_list = [tf_seq.numpy() for tf_seq in tf_seq_list]
   l_size = len(raw_computed_en_seqs)
   
-  if lcs_accuracy_mode:
+  if lcs_accuracy_mode or flatten_accuracy_mode:
     np_seq_list = []
     for i in range(l_size):
       nsl = raw_computed_en_seqs[i]
@@ -171,7 +171,7 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
 #   np_oracle_valid_mask = oracle_valid_mask.numpy()
 #   np_oracle_seq_valid_number = oracle_seq_valid_number.numpy()
   
-  oracle_size = np.size(np_oracle_en_seq)
+  oracle_size = len(np_oracle_en_seq)
   
   max_epos_right = 0
   max_whole_right = 0

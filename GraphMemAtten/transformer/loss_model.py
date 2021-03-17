@@ -18,7 +18,7 @@ class LossCalculator(tf.keras.Model):
     self.token_output_softmax_b = tf.Variable(zero_variable_initializer([n_token]))
   
   # return_mean=True
-  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, parent_hint, compute_prediction, train_to_predict_unk=False):
+  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, parent_hint, compute_prediction, train_to_predict_unk=False, calculate_loss=True):
     
     prediction_mask, r_output = self.logit_with_parent_hint(hidden, parent_hint)
     
@@ -31,22 +31,22 @@ class LossCalculator(tf.keras.Model):
 #     if not compute_prediction:
 #     p_op = tf.print("tf.shape(hidden):", tf.shape(hidden), "tf.shape(valid_mask):", tf.shape(valid_mask), "tf.shape(parent_hint):", tf.shape(parent_hint), "tf.shape(target):", tf.shape(target), "tf.shape(r_output):", tf.shape(r_output))
 #     with tf.control_dependencies([p_op]):
-    nll = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target,
-                                                         logits=r_output)
-    
-    ''' ['tf.shape(output):', [128 6 27]] '''
-    ''' ['tf.shape(nll):', [128 6]] '''
-#     print("valid_mask:" + str(valid_mask))
-    if train_to_predict_unk:
-      r_nll = nll
+    if calculate_loss:
+      nll = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=target,
+                                                           logits=r_output)
+      ''' ['tf.shape(output):', [128 6 27]] '''
+      ''' ['tf.shape(nll):', [128 6]] '''
+  #     print("valid_mask:" + str(valid_mask))
+      if train_to_predict_unk:
+        r_nll = nll
+      else:
+        r_nll = tf.where(tf.equal(valid_mask, 1), nll, tf.zeros_like(nll))
+  #     r_nll = nll * tf.cast(valid_mask, float_type)
+  #     if return_mean:
+  #       nll = tf.reduce_mean(input_tensor=nll)
+      r_nll_sum = tf.reduce_sum(input_tensor=r_nll)
     else:
-      r_nll = tf.where(tf.equal(valid_mask, 1), nll, tf.zeros_like(nll))
-#     r_nll = nll * tf.cast(valid_mask, float_type)
-    
-#     if return_mean:
-#       nll = tf.reduce_mean(input_tensor=nll)
-    r_nll_sum = tf.reduce_sum(input_tensor=r_nll)
-    
+      r_nll_sum = 0.0
 #       print("n_token:" + str(n_token))
 #       target_max = tf.reduce_max(target)
 #       print("target_max:" + str(target_max))
