@@ -28,9 +28,9 @@ def get_unit_expand_sequence(ens, ens_len, infer_stage=False):
       en_start = unit_expand_start[en]
       en_end = unit_expand_end[en]
       assert en_end >= en_start, "wrong en:" + str(en)
-      seq.extend(unit_expand_base[en_start:en_end+1].tolist())
+      seq.append(unit_expand_base[en_start:en_end+1].tolist())
     else:
-      seq.extend([en])
+      seq.append([en])
     
   if ens_len >= 0:
     seq = seq[0:ens_len]
@@ -40,11 +40,21 @@ def get_unit_expand_sequence(ens, ens_len, infer_stage=False):
 def replace_unk_with_none_in_list(lls):
   seq = []
   for ll in lls:
-    if 0 <= ll <= 2 or n_skt <= ll <= n_skt + 2:
-      seq.append(None)
+    if isinstance(ll, list):
+      slot = []
+      seq.append(slot)
+      for lll in ll:
+        judge_and_append(slot, lll)
     else:
-      seq.append(ll)
+      judge_and_append(seq, ll)
   return seq
+
+
+def judge_and_append(seq, ll):
+  if 0 <= ll <= 2 or n_skt <= ll <= n_skt + 2:
+    seq.append(None)
+  else:
+    seq.append(ll)
 
 
 def get_unit_expand_sequence_list(ens_list, ens_len):

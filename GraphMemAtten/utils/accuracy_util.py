@@ -139,17 +139,35 @@ def print_lcs(flag,a,i,j):
 #   return acc_count
 
 # oracle_valid_mask, 
+
+def flatten_nested_lists(seq):
+  res = []
+  for ele in seq:
+    if isinstance(ele, list):
+      res.extend(ele)
+    else:
+      res.append(ele)
+  return res
+
 def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_seq, compute_one_whole=True):
 #   print("tf.shape(raw_computed_en_seqs):" + str(tf.shape(raw_computed_en_seqs)))
 #   print("tf.shape(raw_oracle_computed_en_seq):" + str(tf.shape(raw_oracle_computed_en_seq)))
 #   print("tf.shape(oracle_valid_mask):" + str(tf.shape(oracle_valid_mask)))
 #   tf_seq_list = tf.unstack(raw_computed_en_seqs)
 #   np_seq_list = [tf_seq.numpy() for tf_seq in tf_seq_list]
-  np_seq_list = raw_computed_en_seqs
-  l_size = len(np_seq_list)
+  l_size = len(raw_computed_en_seqs)
+  
+  if lcs_accuracy_mode:
+    np_seq_list = []
+    for i in range(l_size):
+      nsl = raw_computed_en_seqs[i]
+      np_seq_list.append(flatten_nested_lists(nsl))
+    np_oracle_en_seq = flatten_nested_lists(raw_oracle_computed_en_seq)
+  else:
+    np_seq_list = raw_computed_en_seqs
+    np_oracle_en_seq = raw_oracle_computed_en_seq
   
 #   np_oracle_en_seq = raw_oracle_computed_en_seq.numpy()
-  np_oracle_en_seq = raw_oracle_computed_en_seq
 #   np_oracle_valid_mask = oracle_valid_mask.numpy()
 #   np_oracle_seq_valid_number = oracle_seq_valid_number.numpy()
   
@@ -172,7 +190,13 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
     if oracle_en != None:
 #       assert oracle_en > 2 + n_base
 #       oracle_unit_expand_seq_list.append(oracle_en)
-      oracle_sub_unit_size += 1
+      if isinstance(oracle_en, list):
+        for t in oracle_en:
+          if t != None:
+            oracle_sub_unit_size += 1
+      else:
+        oracle_sub_unit_size += 1
+      
 #     else:
 #       assert n_base <= oracle_en and oracle_en <= 2 + n_base, "wrong oracle_en:" + str(oracle_en) + "#n_base:" + str(n_base)
 #       oracle_unit_expand_seq_list.append(None)
@@ -195,8 +219,19 @@ def compute_accuracy_of_sequences(raw_computed_en_seqs, raw_oracle_computed_en_s
       else:
         temp_pos_accurate_count = 0
         for j in range(r_size):
-          if nsl[j] == np_oracle_en_seq[j]:
-            temp_pos_accurate_count = temp_pos_accurate_count + 1
+          nsl_j = nsl[j]
+          np_oracle_en_seq_j = np_oracle_en_seq[j]
+          if isinstance(nsl_j, list):
+            assert isinstance(np_oracle_en_seq_j, list)
+            nsl_j_size = len(nsl_j)
+            np_oracle_en_seq_j_size = len(np_oracle_en_seq_j)
+            j_size = min(nsl_j_size, np_oracle_en_seq_j_size)
+            for k in range(j_size):
+              if nsl_j[k] == np_oracle_en_seq_j[k]:
+                temp_pos_accurate_count = temp_pos_accurate_count + 1
+          else:
+            if nsl[j] == np_oracle_en_seq[j]:
+              temp_pos_accurate_count = temp_pos_accurate_count + 1
       
 #       print("temp_pos_accurate_count1:" + str(temp_pos_accurate_count1) + "#temp_pos_accurate_count2:" + str(temp_pos_accurate_count))
 #       for j in range(r_size):
