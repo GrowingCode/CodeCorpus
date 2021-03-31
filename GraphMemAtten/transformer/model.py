@@ -88,7 +88,7 @@ class Transformer(tf.keras.Model):
     y *= emb_scale
     return y
   
-  def transformer(self, dec_inp, target, mems, valid_mask, parent_hint, is_training, 
+  def transformer(self, dec_inp, target, mems, valid_mask, parent_hint, is_training, calculate_loss=True, 
                   same_length=False, clamp_len=-1, 
                   untie_r=False):
     """
@@ -182,7 +182,8 @@ class Transformer(tf.keras.Model):
         valid_mask=valid_mask,
         parent_hint=parent_hint,
         compute_prediction=(is_training == False),
-        train_to_predict_unk=standard_infer_train_to_predict_unk)
+        train_to_predict_unk=standard_infer_train_to_predict_unk,
+        calculate_loss = calculate_loss)
     
     return output, probs, predictions, loss, new_mems
   

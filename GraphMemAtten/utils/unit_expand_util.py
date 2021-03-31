@@ -4,7 +4,7 @@ from meta_info.non_hyper_constant import skeleton_e, skeleton_pe, skeleton_one,\
 from meta_info.hyper_parameter import skeleton_mode, n_skt
 
 
-def get_unit_expand_sequence(ens, ens_len):
+def get_unit_expand_sequence(ens, ens_len, infer_stage=False):
   need_expand = 0
   if skeleton_mode == skeleton_e:
     pass
@@ -24,13 +24,13 @@ def get_unit_expand_sequence(ens, ens_len):
   seq = []
 #   print("length of ens:" + str(len(ens)))
   for en in ens:
-    if need_expand:
+    if need_expand and ((not infer_stage) or (2 < en < n_skt)):
       en_start = unit_expand_start[en]
       en_end = unit_expand_end[en]
       assert en_end >= en_start, "wrong en:" + str(en)
-      seq.extend(unit_expand_base[en_start:en_end+1].tolist())
+      seq.append(unit_expand_base[en_start:en_end+1].tolist())
     else:
-      seq.extend([en])
+      seq.append([en])
     
   if ens_len >= 0:
     seq = seq[0:ens_len]
@@ -40,17 +40,27 @@ def get_unit_expand_sequence(ens, ens_len):
 def replace_unk_with_none_in_list(lls):
   seq = []
   for ll in lls:
-    if 0 <= ll <= 2 or n_skt <= ll <= n_skt + 2:
-      seq.append(None)
+    if isinstance(ll, list):
+      slot = []
+      seq.append(slot)
+      for lll in ll:
+        judge_and_append(slot, lll)
     else:
-      seq.append(ll)
+      judge_and_append(seq, ll)
   return seq
+
+
+def judge_and_append(seq, ll):
+  if 0 <= ll <= 2 or n_skt <= ll <= n_skt + 2:
+    seq.append(None)
+  else:
+    seq.append(ll)
 
 
 def get_unit_expand_sequence_list(ens_list, ens_len):
   res = []
   for ens in ens_list:
-    r_ens = get_unit_expand_sequence(ens, ens_len)
+    r_ens = get_unit_expand_sequence(ens, ens_len, infer_stage=True)
     res.append(r_ens)
   return res
     
