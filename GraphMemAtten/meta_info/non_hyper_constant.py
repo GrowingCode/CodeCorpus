@@ -96,6 +96,7 @@ meta_of_ast2tensor_file = open(meta_dir + "/meta_of_ast2tensor.json", 'r', encod
 meta_of_ast2tensor_ts = json.load(meta_of_ast2tensor_file)
 meta_of_ast2tensor_file.close()
 parent_info_length = meta_of_ast2tensor_ts["ParentInfoLength"]
+token_position_hint_base = meta_of_ast2tensor_ts["TokenPositionHintBase"]
 
 all_skt_one_to_each_file = open(data_dir + "/All_skt_one_to_each.json", 'r', encoding='UTF-8')
 all_skt_one_to_each_ts = json.load(all_skt_one_to_each_file)
@@ -117,6 +118,21 @@ all_skt_pe_to_each_file.close()
 all_skt_pe_to_each_base = np.array(all_skt_pe_to_each_ts[0])
 all_skt_pe_to_each_start = np.array(all_skt_pe_to_each_ts[1])
 all_skt_pe_to_each_end = np.array(all_skt_pe_to_each_ts[2])
+
+all_skt_one_position_hint_mask_file = open(data_dir + "/All_skt_one_position_hint_mask.json", 'r', encoding='UTF-8')
+all_skt_one_position_hint_mask_ts = json.load(all_skt_one_position_hint_mask_file)
+all_skt_one_position_hint_mask_file.close()
+all_skt_one_position_hint_mask = np.array(all_skt_one_position_hint_mask_ts)
+
+all_skt_pe_position_hint_mask_file = open(data_dir + "/All_skt_pe_position_hint_mask.json", 'r', encoding='UTF-8')
+all_skt_pe_position_hint_mask_ts = json.load(all_skt_pe_position_hint_mask_file)
+all_skt_pe_position_hint_mask_file.close()
+all_skt_pe_position_hint_mask = np.array(all_skt_pe_position_hint_mask_ts)
+
+all_skt_e_position_hint_mask_file = open(data_dir + "/All_skt_e_position_hint_mask.json", 'r', encoding='UTF-8')
+all_skt_e_position_hint_mask_ts = json.load(all_skt_e_position_hint_mask_file)
+all_skt_e_position_hint_mask_file.close()
+all_skt_e_position_hint_mask = np.array(all_skt_e_position_hint_mask_ts)
 
 all_skt_one_parent_hint_mask_file = open(data_dir + "/All_skt_one_parent_hint_mask.json", 'r', encoding='UTF-8')
 all_skt_one_parent_hint_mask_ts = json.load(all_skt_one_parent_hint_mask_file)
