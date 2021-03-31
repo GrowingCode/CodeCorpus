@@ -311,7 +311,7 @@ def model_running(model, ds, decode_mode):
 #   while True:
 #     try:
   for next_element in ds:
-    batch_token_loss, batch_token_accuracy, batch_token_count, batch_t0_token_accuracy, batch_t0_token_count, batch_t1_token_accuracy, batch_t1_token_count = model.batch_train_test(next_element['origin_sequence'], next_element['relative_to_part_first'], next_element['valid_mask'], next_element['parent_hint'], next_element['token_type'], decode_mode)
+    batch_token_loss, batch_token_accuracy, batch_token_count, batch_t0_token_accuracy, batch_t0_token_count, batch_t1_token_accuracy, batch_t1_token_count = model.batch_train_test(next_element['origin_sequence'], next_element['relative_to_part_first'], next_element['valid_mask'], next_element['parent_hint'], next_element['position_hint'], next_element['token_type'], decode_mode)
     all_token_loss += batch_token_loss
     all_token_accuracy += np.asarray(batch_token_accuracy, np_float_type)
     all_token_count += batch_token_count
@@ -347,7 +347,7 @@ def beam_model_running(model, ds, decode_mode):
   if debug_beam_handle_only_one_first_batch:
     r_ds = ds.take(1)
   for next_element in r_ds:
-    batch_skt_each_acc, batch_skt_whole_acc, batch_skt_count, batch_token_each_acc, batch_token_whole_acc, batch_token_count = model.batch_test_beam(next_element['origin_sequence'], next_element['valid_mask'], next_element['parent_hint'], next_element['seq_part_skip'], next_element['token_type'], next_element['origin_sequence_exact'], decode_mode)
+    batch_skt_each_acc, batch_skt_whole_acc, batch_skt_count, batch_token_each_acc, batch_token_whole_acc, batch_token_count = model.batch_test_beam(next_element['origin_sequence'], next_element['valid_mask'], next_element['parent_hint'], next_element['position_hint'], next_element['seq_part_skip'], next_element['token_type'], next_element['origin_sequence_exact'], decode_mode)
     all_skt_each_acc += batch_skt_each_acc
     all_skt_whole_accuracy += batch_skt_whole_acc
     all_skt_count += batch_skt_count

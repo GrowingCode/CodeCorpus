@@ -5,7 +5,8 @@ from meta_info.non_hyper_constant import data_dir, skeleton_pe,\
   all_skt_e_par_hint_str_id, all_skt_pe_par_hint_str_id,\
   all_skt_one_par_hint_str_id, all_skeleton_each_id_str, all_skeleton_pe_id_str,\
   all_skeleton_id_str, all_skt_one_par_hint_id, all_skt_pe_par_hint_id,\
-  all_skt_e_par_hint_id
+  all_skt_e_par_hint_id, all_skt_one_position_hint_mask,\
+  all_skt_pe_position_hint_mask, all_skt_e_position_hint_mask
 import json
 import tensorflow as tf
 
@@ -52,6 +53,8 @@ compute_beam = 1
 
 beam_infer_with_skt_e_full_length = 0
 
+consider_position_hint = 0
+
 use_simple_multi_infer_mode = 0
 skeleton_mode = skeleton_pe
 
@@ -71,6 +74,7 @@ if skeleton_mode == skeleton_one:
   n_skt = all_token_summary_ts["SkeletonHitNum"]
   multi_infer_num = max(all_skt_tensor_summary_ts["max_skt_number_of_one_statement"], all_skt_tensor_summary_ts["max_token_number_of_one_statement"])
   all_skt_hint_mask = all_skt_one_parent_hint_mask
+  all_skt_position_hint_mask = all_skt_one_position_hint_mask
   all_skt_h_num = all_skeleton_h_num
   all_skt_par_hint_to_id = all_skt_one_par_hint_str_id
   all_skt_par_hint_id = all_skt_one_par_hint_id
@@ -79,6 +83,7 @@ elif skeleton_mode == skeleton_pe:
   n_skt = all_token_summary_ts["SkeletonPEHitNum"]
   multi_infer_num = max(all_skt_tensor_summary_ts["max_skt_number_of_pe_statement"], all_skt_tensor_summary_ts["max_token_number_of_pe_statement"])
   all_skt_hint_mask = all_skt_pe_parent_hint_mask
+  all_skt_position_hint_mask = all_skt_pe_position_hint_mask
   all_skt_h_num = all_skeleton_pe_h_num
   all_skt_par_hint_to_id = all_skt_pe_par_hint_str_id
   all_skt_par_hint_id = all_skt_pe_par_hint_id
@@ -87,13 +92,14 @@ elif skeleton_mode == skeleton_e:
   n_skt = all_token_summary_ts["SkeletonEachHitNum"]
   multi_infer_num = max(all_skt_tensor_summary_ts["max_skt_number_of_e_statement"], all_skt_tensor_summary_ts["max_token_number_of_e_statement"])
   all_skt_hint_mask = all_skt_e_parent_hint_mask
+  all_skt_position_hint_mask = all_skt_e_position_hint_mask
   all_skt_h_num = all_skeleton_each_h_num
   all_skt_par_hint_to_id = all_skt_e_par_hint_str_id
   all_skt_par_hint_id = all_skt_e_par_hint_id
   all_skt_id_to_str = all_skeleton_each_id_str
 else:
   assert False
-  
+
 assert len(all_skt_h_num) == n_skt, "len(all_skt_h_num):" + str(len(all_skt_h_num)) + "#n_skt:" + str(n_skt)
 n_token = n_skt + all_token_summary_ts["SkeletonTokenHitNum"]
 assert n_token > -1

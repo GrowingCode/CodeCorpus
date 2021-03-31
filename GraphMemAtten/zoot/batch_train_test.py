@@ -34,7 +34,7 @@ class BatchTrainTest(tf.keras.Model):
     if compute_beam:
       self.one_seq_beam = OneSeqBeam(self.transformer_model, self.multi_decode_model)# self.multi_position_transfer
   
-  def batch_train_test(self, origin_sequence, relative_to_part_first, valid_mask, parent_hint, token_type, decode_mode):
+  def batch_train_test(self, origin_sequence, relative_to_part_first, valid_mask, parent_hint, position_hint, token_type, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''
 #     print(origin_sequence)
     ori_sequence = origin_sequence[0:-1,:]
@@ -44,6 +44,7 @@ class BatchTrainTest(tf.keras.Model):
     r_relative_to_part_first = relative_to_part_first[1:,:]
     r_valid_mask = valid_mask[1:,:]
     r_parent_hint = parent_hint[1:,:]
+    r_position_hint = position_hint[1:,:]
     r_token_type = token_type[1:,:]
     seq_len = np.shape(ori_sequence)[0]
 #     print("seq_len:" + str(seq_len))
@@ -69,22 +70,23 @@ class BatchTrainTest(tf.keras.Model):
       part_relative_to_part_first = r_relative_to_part_first[i:i_end,:]
       part_valid_mask = r_valid_mask[i:i_end,:]
       part_parent_hint = r_parent_hint[i:i_end,:]
+      part_position_hint = r_position_hint[i:i_end,:]
       part_token_type = r_token_type[i:i_end,:]
       with tf.device("/gpu:0"):
         if decode_mode == standard_infer_train or decode_mode == multi_infer_train:
             with tf.GradientTape() as tape:
               if decode_mode == multi_infer_train:
-                all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, part_parent_hint, is_training=True)
+                all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, part_parent_hint, part_position_hint, is_training=True)
               elif decode_mode == standard_infer_train:
-                _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, part_parent_hint, is_training=True)
+                _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, part_parent_hint, part_position_hint, is_training=True)
               else:
                 assert False
         else:
           assert decode_mode == standard_infer_test or decode_mode == multi_infer_test
           if decode_mode == multi_infer_test:
-            all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, part_parent_hint, is_training=False)
+            all_outputs, _, predictions, loss, new_mems = self.multi_decode_model.multi_decode(part_ori_sequence, part_tgt_sequence, part_relative_to_part_first, all_outputs, mems, part_valid_mask, part_parent_hint, part_position_hint, is_training=False)
           elif decode_mode == standard_infer_test:
-            _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, part_parent_hint, is_training=False)
+            _, _, predictions, loss, new_mems = self.transformer_model.transformer(part_ori_sequence, part_tgt_sequence, mems, part_valid_mask, part_parent_hint, part_position_hint, is_training=False)
           else:
             assert False
 #       print("loss:" + str(loss))
@@ -127,12 +129,13 @@ class BatchTrainTest(tf.keras.Model):
 #     numpy_batch_token_accuracy = [one_token_accuracy.numpy() for one_token_accuracy in batch_token_accuracy]
     return batch_token_loss.numpy(), batch_token_accuracy.numpy(), batch_token_count.numpy(), batch_t0_token_accuracy.numpy(), batch_t0_token_count.numpy(), batch_t1_token_accuracy.numpy(), batch_t1_token_count.numpy()
   
-  def batch_test_beam(self, origin_sequence, valid_mask, parent_hint, seq_part_skip, token_type, origin_sequence_exact, decode_mode):
+  def batch_test_beam(self, origin_sequence, valid_mask, parent_hint, position_hint, seq_part_skip, token_type, origin_sequence_exact, decode_mode):
     ''' all these are numpy arrays of shape: [seq_len, batch_size] '''
     ''' steps: split origin_sequence to each sequence '''
     sequences = tf.unstack(origin_sequence, axis=1)
     valid_masks = tf.unstack(valid_mask, axis=1)
     parent_hints = tf.unstack(parent_hint, axis=1)
+    position_hints = tf.unstack(position_hint, axis=1)
     part_skips = tf.unstack(seq_part_skip, axis=1)
     pt_types = tf.unstack(token_type, axis=1)
     sequence_exacts = tf.unstack(origin_sequence_exact, axis=1)
@@ -142,10 +145,11 @@ class BatchTrainTest(tf.keras.Model):
       sequence = sequences[i]
       v_mask = valid_masks[i]
       par_hint = parent_hints[i]
+      pos_hint = position_hints[i]
       part_skip = part_skips[i]
       pt_type = pt_types[i]
       sequence_exact = sequence_exacts[i]
-      skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count, _ = self.one_seq_beam(self.get_mems(1), sequence, v_mask, par_hint, part_skip, pt_type, sequence_exact, decode_mode)
+      skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count, _ = self.one_seq_beam(self.get_mems(1), sequence, v_mask, par_hint, pos_hint, part_skip, pt_type, sequence_exact, decode_mode)
       batch_skt_each_acc += skt_each_acc
       batch_skt_whole_acc += skt_whole_acc
       batch_skt_count += skt_count

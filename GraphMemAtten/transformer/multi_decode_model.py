@@ -14,7 +14,7 @@ class MultiDecodeModel(tf.keras.Model):
     self.loss_calculator = LossCalculator()
 #     self.multi_loss_calculator = MultiLossCalculator()
   
-  def multi_decode(self, dec_inp, target, relative_to_part_first, all_outputs, mems, valid_mask, parent_hint, is_training):
+  def multi_decode(self, dec_inp, target, relative_to_part_first, all_outputs, mems, valid_mask, parent_hint, position_hint, is_training):
 #     relative_to_part_first = tf.zeros_like(relative_to_part_first)
     
     target_length = tf.shape(target)[0]
@@ -26,7 +26,7 @@ class MultiDecodeModel(tf.keras.Model):
     relative_to_part_first shape: [target_length, batch_size]
     '''
     ''' all_outputs shape: [all_already_outputs_length(may drop the initial) batch_size feature_size] '''
-    outputs, _, _, _, new_mems = self.transformer_model.transformer(dec_inp, target, mems, valid_mask, parent_hint, is_training=is_training)
+    outputs, _, _, _, new_mems = self.transformer_model.transformer(dec_inp, target, mems, valid_mask, parent_hint, position_hint, is_training=is_training)
 #     if stop_gradient_for_transformer_output_in_multi_decode:
 #       outputs = tf.stop_gradient(outputs)
     ''' outputs shape: [target_length batch_size feature_size] '''
@@ -40,7 +40,7 @@ class MultiDecodeModel(tf.keras.Model):
     ''' used_outputs shape: [target_length batch_size feature_size] '''
 #     transferred_outputs = used_outputs
     transferred_outputs = self.multi_position_transfer.transfer(relative_to_part_first, used_outputs)
-    probs, predictions, loss = self.loss_calculator.mask_adaptive_logsoftmax(transferred_outputs, target, valid_mask, parent_hint, is_training == False, multi_infer_train_to_predict_unk)
+    probs, predictions, loss = self.loss_calculator.mask_adaptive_logsoftmax(transferred_outputs, target, valid_mask, parent_hint, position_hint, is_training == False, multi_infer_train_to_predict_unk)
 #     probs, predictions, loss = self.multi_loss_calculator.mask_adaptive_logsoftmax(transferred_outputs, target, relative_to_part_first, valid_mask, is_training == False)
     
     return new_all_outputs, probs, predictions, loss, new_mems
