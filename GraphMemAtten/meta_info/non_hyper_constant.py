@@ -96,7 +96,6 @@ meta_of_ast2tensor_file = open(meta_dir + "/meta_of_ast2tensor.json", 'r', encod
 meta_of_ast2tensor_ts = json.load(meta_of_ast2tensor_file)
 meta_of_ast2tensor_file.close()
 parent_info_length = meta_of_ast2tensor_ts["ParentInfoLength"]
-token_position_hint_base = meta_of_ast2tensor_ts["TokenPositionHintBase"]
 
 all_skt_one_to_each_file = open(data_dir + "/All_skt_one_to_each.json", 'r', encoding='UTF-8')
 all_skt_one_to_each_ts = json.load(all_skt_one_to_each_file)
