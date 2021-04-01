@@ -150,13 +150,13 @@ class OneSeqBeam():
 #       predict_len = r_part_seq_len
 #       final_trim_len = r_part_seq_len
 #     print("r_part_seq_exact:" + str(r_part_seq_exact))
-    with tf.device('/gpu:0'):
-      if decode_mode == standard_infer_test:
-        inferrer = OneStepStandInfer(self.transformer_model, mems_before_last, last_token_before_part_seq)
-      elif decode_mode == multi_infer_test:
-        inferrer = OneStepMultiInfer(self.transformer_model, self.multi_decode_model, mems_before_last, last_token_before_part_seq)
-      else:
-        assert False
+#     with tf.device('/gpu:0'):
+    if decode_mode == standard_infer_test:
+      inferrer = OneStepStandInfer(self.transformer_model, mems_before_last, last_token_before_part_seq)
+    elif decode_mode == multi_infer_test:
+      inferrer = OneStepMultiInfer(self.transformer_model, self.multi_decode_model, mems_before_last, last_token_before_part_seq)
+    else:
+      assert False
 #     print("inferred_ens.numpy():" + str(inferred_ens.numpy()))
     if e0:
       inferred_ens = framework_skt_infer(inferrer, part_parent_hint, part_position_hint, predict_len)

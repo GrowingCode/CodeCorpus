@@ -80,7 +80,7 @@ class LossCalculator(tf.keras.Model):
     prediction_mask = tf.nn.embedding_lookup(all_skt_hint_mask, parent_hint)
     position_prediction_mask = tf.nn.embedding_lookup(all_skt_position_hint_mask, position_hint)
     if consider_position_hint:
-      prediction_mask = tf.bitwise.bitwise_and(prediction_mask, position_prediction_mask);
+      prediction_mask = tf.bitwise.bitwise_and(prediction_mask, position_prediction_mask)
     ''' ['tf.shape(prediction_mask):', [128 6 27]] '''
     output = generate_logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
     
