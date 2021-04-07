@@ -2,7 +2,10 @@ from meta_info.hyper_parameter import oracle_mem_len, \
   oracle_tgt_len, accuracy_based_on_whole, \
   memory_train_test_beam_consistent
 from meta_info.non_hyper_constant import int_type, float_type, \
-  standard_infer_test, multi_infer_test, debug_in_test_beam, top_ks
+  standard_infer_test, multi_infer_test, debug_in_test_beam, top_ks,\
+  stand_infer_skt_ens, stand_oracle_skt_ens, multi_infer_token_ens,\
+  multi_oracle_token_ens, stand_infer_token_ens, stand_oracle_token_ens,\
+  multi_infer_skt_ens, multi_oracle_skt_ens
 import numpy as np
 import tensorflow as tf
 from transformer_beam.one_sequence.one_step.one_step_infer import OneStepMultiInfer, \
@@ -174,11 +177,32 @@ class OneSeqBeam():
 #       print("r_inferred_ens:" + str(r_inferred_ens))
       skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_accuracy_of_sequences(r_inferred_ens, r_part_seq_exact, compute_one_whole=accuracy_based_on_whole)
       token_f_each_acc, token_f_whole_acc, token_f_count = tf.zeros([len(top_ks)], float_type), tf.zeros([len(top_ks)], float_type), tf.constant(0, int_type)
-    if e1:
-      inferred_ens = framework_token_infer(inferrer, part_parent_hint, part_position_hint, predict_len)
+    elif e1:
+      r_inferred_ens = framework_token_infer(inferrer, part_parent_hint, part_position_hint, predict_len)
       skt_f_each_acc, skt_f_whole_acc, skt_f_count = tf.zeros([len(top_ks)], float_type), tf.zeros([len(top_ks)], float_type), tf.constant(0, int_type)
       r_part_seq_exact = replace_unk_with_none_in_list(part_seq_exact.numpy().tolist())
-      token_f_each_acc, token_f_whole_acc, token_f_count = compute_accuracy_of_sequences(inferred_ens, r_part_seq_exact, compute_one_whole=accuracy_based_on_whole)
+      token_f_each_acc, token_f_whole_acc, token_f_count = compute_accuracy_of_sequences(r_inferred_ens, r_part_seq_exact, compute_one_whole=accuracy_based_on_whole)
+    else:
+      assert False
+    
+    if decode_mode == standard_infer_test:
+      if e0:
+        stand_infer_skt_ens.append(r_inferred_ens)
+        stand_oracle_skt_ens.append(r_part_seq_exact)
+      elif e1:
+        stand_infer_token_ens.append(r_inferred_ens)
+        stand_oracle_token_ens.append(r_part_seq_exact)
+      else:
+        assert False
+    elif decode_mode == multi_infer_test:
+      if e0:
+        multi_infer_skt_ens.append(r_inferred_ens)
+        multi_oracle_skt_ens.append(r_part_seq_exact)
+      elif e1:
+        multi_infer_token_ens.append(r_inferred_ens)
+        multi_oracle_token_ens.append(r_part_seq_exact)
+    else:
+      assert False
 #     print("inferred_ens:" + str(inferred_ens) + "#last_token_before_part_seq:" + str(last_token_before_part_seq) + "#part_seq:" + str(part_seq))
     return skt_f_each_acc, skt_f_whole_acc, skt_f_count, token_f_each_acc, token_f_whole_acc, token_f_count
   

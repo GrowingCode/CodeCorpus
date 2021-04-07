@@ -218,6 +218,15 @@ all_skeleton_each_id_str_temp = json.load(all_skeleton_each_id_str_file)
 all_skeleton_each_id_str = gen_dict_with_str_key_to_num_key(all_skeleton_each_id_str_temp)
 all_skeleton_each_id_str_file.close()
 
+''' stand and multi, infer and oracle '''
+stand_infer_skt_ens = []
+stand_oracle_skt_ens = []
+stand_infer_token_ens = []
+stand_oracle_token_ens = []
+multi_infer_skt_ens = []
+multi_oracle_skt_ens = []
+multi_infer_token_ens = []
+multi_oracle_token_ens = []
 
 
 
