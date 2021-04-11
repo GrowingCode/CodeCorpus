@@ -53,9 +53,10 @@ compute_beam = 1
 
 beam_infer_with_skt_e_full_length = 0
 
-''' 0: not consider position hint '''
-''' 1: consider position hint '''
-''' 2: only consider position hint '''
+''' 0: not consider any hint '''
+''' 1: consider parent hint position hint '''
+''' 2: consider position hint '''
+''' 3: only consider position hint '''
 consider_position_hint = 0
 
 use_simple_multi_infer_mode = 0
