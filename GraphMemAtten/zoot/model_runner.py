@@ -505,13 +505,13 @@ if __name__ == '__main__':
 #     result2 = get_first_param_right_but_second_param_wrong(multi_infer_skt_ens, multi_oracle_skt_ens, stand_infer_skt_ens, stand_oracle_skt_ens)
 #     print("=== multi_right but stand_wrong ===")
 #     pretty_print_dict(result2)
-    with open(mr.real_model_storage_dir + '/' + "stand_infer_skt_ens.json", 'w') as file_object:
+    with open(mr.real_model_storage_dir + '/' + "z_stand_infer_skt_ens.json", 'w') as file_object:
       file_object.write(json.dumps(stand_infer_skt_ens))
-    with open(mr.real_model_storage_dir + '/' + "stand_oracle_skt_ens.json", 'w') as file_object:
+    with open(mr.real_model_storage_dir + '/' + "z_stand_oracle_skt_ens.json", 'w') as file_object:
       file_object.write(json.dumps(stand_oracle_skt_ens))
-    with open(mr.real_model_storage_dir + '/' + "multi_infer_skt_ens.json", 'w') as file_object:
+    with open(mr.real_model_storage_dir + '/' + "z_multi_infer_skt_ens.json", 'w') as file_object:
       file_object.write(json.dumps(multi_infer_skt_ens))
-    with open(mr.real_model_storage_dir + '/' + "multi_oracle_skt_ens.json", 'w') as file_object:
+    with open(mr.real_model_storage_dir + '/' + "z_multi_oracle_skt_ens.json", 'w') as file_object:
       file_object.write(json.dumps(multi_oracle_skt_ens))
     
     
