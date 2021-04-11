@@ -20,7 +20,7 @@ class LossCalculator(tf.keras.Model):
   # return_mean=True
   def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, parent_hint, position_hint, compute_prediction, train_to_predict_unk=False, calculate_loss=True):
     
-    prediction_mask, r_output = self.logit_with_parent_hint(hidden, parent_hint, position_hint)
+    prediction_mask, r_output = self.logit_with_hint(hidden, parent_hint, position_hint)
     
     if debug_assert:
       o_hot = tf.nn.embedding_lookup(n_token_one_hot, target)
@@ -66,7 +66,7 @@ class LossCalculator(tf.keras.Model):
     ''' t_h shape: [tgt_size, batch_size, feature_size] actually [1, 1, feature_size] '''
     ''' predictions shape: [tgt_size, batch_size, top_ks[-1]] '''
     
-    _, r_output = self.logit_with_parent_hint(t_h, parent_hint, position_hint)
+    _, r_output = self.logit_with_hint(t_h, parent_hint, position_hint)
     
 #     p_op = tf.print("tf.shape(t_h):", tf.shape(t_h), "tf.shape(r_output):", tf.shape(r_output))
 #     with tf.control_dependencies([p_op]):
@@ -75,12 +75,17 @@ class LossCalculator(tf.keras.Model):
     probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
     return probs, predictions
   
-  def logit_with_parent_hint(self, hidden, parent_hint, position_hint):
+  def logit_with_hint(self, hidden, parent_hint, position_hint):
 #     prediction_mask = tf.gather(hint_mask, parent_hint)
     prediction_mask = tf.nn.embedding_lookup(all_skt_hint_mask, parent_hint)
-    position_prediction_mask = tf.nn.embedding_lookup(all_skt_position_hint_mask, position_hint)
-    if consider_position_hint:
-      prediction_mask = tf.bitwise.bitwise_and(prediction_mask, position_prediction_mask)
+    if consider_position_hint > 0:
+      position_prediction_mask = tf.nn.embedding_lookup(all_skt_position_hint_mask, position_hint)
+      if consider_position_hint == 1:
+        prediction_mask = tf.bitwise.bitwise_and(prediction_mask, position_prediction_mask)
+      elif consider_position_hint == 2:
+        prediction_mask = position_prediction_mask
+      else:
+        assert False
     ''' ['tf.shape(prediction_mask):', [128 6 27]] '''
     output = generate_logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
     
