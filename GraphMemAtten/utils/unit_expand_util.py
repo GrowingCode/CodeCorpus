@@ -1,6 +1,7 @@
 from meta_info.non_hyper_constant import skeleton_e, skeleton_pe, skeleton_one,\
   all_skt_pe_to_each_base, all_skt_pe_to_each_start, all_skt_pe_to_each_end,\
-  all_skt_one_to_each_base, all_skt_one_to_each_start, all_skt_one_to_each_end
+  all_skt_one_to_each_base, all_skt_one_to_each_start, all_skt_one_to_each_end,\
+  np_int_type
 from meta_info.hyper_parameter import skeleton_mode, n_skt
 
 
@@ -28,9 +29,18 @@ def get_unit_expand_sequence(ens, ens_len, infer_stage=False):
       en_start = unit_expand_start[en]
       en_end = unit_expand_end[en]
       assert en_end >= en_start, "wrong en:" + str(en)
-      seq.append(unit_expand_base[en_start:en_end+1].tolist())
+      ll = unit_expand_base[en_start:en_end+1].tolist()
+      for ll_o in ll:
+        assert isinstance(ll_o, int)
+      seq.append(ll)
     else:
-      seq.append([en])
+      po_en = en
+      if isinstance(en, np_int_type):
+        po_en = en.item()
+      else:
+        assert isinstance(en, int)
+      assert isinstance(po_en, int), "strange en type:" + str(type(po_en))
+      seq.append([po_en])
     
   if ens_len >= 0:
     seq = seq[0:ens_len]
