@@ -14,9 +14,8 @@ def get_recent_fixed_length_memory(mems, mem_len):
 
 def get_specified_varied_length_memory(mems, last_index_in_extracted_mems, mem_len, train_test_consistent):
   new_mems = []
-  assert last_index_in_extracted_mems >= 0
-#   if last_index_in_extracted_mems == -1:
-#     last_index_in_extracted_mems = tf.shape(mems[0])[0] - 1
+  if last_index_in_extracted_mems == -1:
+    last_index_in_extracted_mems = tf.shape(mems[0])[0] - 1
   extracted_with_before_size = last_index_in_extracted_mems + 1
   if train_test_consistent:
     e_size = mem_len + tf.math.mod(extracted_with_before_size, mem_len)
