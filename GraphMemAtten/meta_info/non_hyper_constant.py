@@ -118,6 +118,21 @@ all_skt_pe_to_each_base = np.array(all_skt_pe_to_each_ts[0])
 all_skt_pe_to_each_start = np.array(all_skt_pe_to_each_ts[1])
 all_skt_pe_to_each_end = np.array(all_skt_pe_to_each_ts[2])
 
+all_skt_one_type_hint_mask_file = open(data_dir + "/All_skt_one_type_hint_mask.json", 'r', encoding='UTF-8')
+all_skt_one_type_hint_mask_ts = json.load(all_skt_one_type_hint_mask_file)
+all_skt_one_type_hint_mask_file.close()
+all_skt_one_type_hint_mask = np.array(all_skt_one_type_hint_mask_ts)
+
+all_skt_pe_type_hint_mask_file = open(data_dir + "/All_skt_pe_type_hint_mask.json", 'r', encoding='UTF-8')
+all_skt_pe_type_hint_mask_ts = json.load(all_skt_pe_type_hint_mask_file)
+all_skt_pe_type_hint_mask_file.close()
+all_skt_pe_type_hint_mask = np.array(all_skt_pe_type_hint_mask_ts)
+
+all_skt_e_type_hint_mask_file = open(data_dir + "/All_skt_e_type_hint_mask.json", 'r', encoding='UTF-8')
+all_skt_e_type_hint_mask_ts = json.load(all_skt_e_type_hint_mask_file)
+all_skt_e_type_hint_mask_file.close()
+all_skt_e_type_hint_mask = np.array(all_skt_e_type_hint_mask_ts)
+
 all_skt_one_position_hint_mask_file = open(data_dir + "/All_skt_one_position_hint_mask.json", 'r', encoding='UTF-8')
 all_skt_one_position_hint_mask_ts = json.load(all_skt_one_position_hint_mask_file)
 all_skt_one_position_hint_mask_file.close()

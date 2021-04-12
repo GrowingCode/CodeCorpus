@@ -1,5 +1,6 @@
 from meta_info.hyper_parameter import d_model, n_token, d_embed, \
-  all_skt_hint_mask, all_skt_position_hint_mask, consider_position_hint
+  all_skt_hint_mask, all_skt_position_hint_mask, consider_position_hint,\
+  all_skt_type_hint_mask
 from meta_info.non_hyper_constant import top_ks
 import tensorflow as tf
 from utils.initialize_util import random_normal_variable_initializer, \
@@ -17,9 +18,9 @@ class LossCalculator(tf.keras.Model):
     self.token_output_softmax_b = tf.Variable(zero_variable_initializer([n_token]))
   
   # return_mean=True
-  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, parent_hint, position_hint, compute_prediction, train_to_predict_unk=False, calculate_loss=True):
+  def mask_adaptive_logsoftmax(self, hidden, target, valid_mask, type_hint, parent_hint, position_hint, compute_prediction, train_to_predict_unk=False, calculate_loss=True):
     # prediction_mask, 
-    r_output = self.logit_with_hint(hidden, parent_hint, position_hint)
+    r_output = self.logit_with_hint(hidden, type_hint, parent_hint, position_hint)
     
 #     if debug_assert:
 #       o_hot = tf.nn.embedding_lookup(n_token_one_hot, target)
@@ -62,11 +63,11 @@ class LossCalculator(tf.keras.Model):
 #     print("r_nll:" + str(r_nll))
     return probs, predictions, r_nll_sum
   
-  def only_compute_predictions(self, t_h, parent_hint, position_hint):
+  def only_compute_predictions(self, t_h, type_hint, parent_hint, position_hint):
     ''' t_h shape: [tgt_size, batch_size, feature_size] actually [1, 1, feature_size] '''
     ''' predictions shape: [tgt_size, batch_size, top_ks[-1]] '''
     
-    r_output = self.logit_with_hint(t_h, parent_hint, position_hint)
+    r_output = self.logit_with_hint(t_h, type_hint, parent_hint, position_hint)
     
 #     p_op = tf.print("tf.shape(t_h):", tf.shape(t_h), "tf.shape(r_output):", tf.shape(r_output))
 #     with tf.control_dependencies([p_op]):
@@ -75,24 +76,26 @@ class LossCalculator(tf.keras.Model):
     probs, predictions = tf.nn.top_k(t_probs, top_ks[-1])
     return probs, predictions
   
-  def logit_with_hint(self, hidden, parent_hint, position_hint):
+  def logit_with_hint(self, hidden, type_hint, parent_hint, position_hint):
 #     prediction_mask = tf.gather(hint_mask, parent_hint)
+    prediction_mask = tf.gather(all_skt_type_hint_mask, type_hint)
     output = generate_logit(hidden, self.token_output_w, self.token_output_softmax_b, self.proj_w)
     if consider_position_hint > 0:
       parent_prediction_mask = tf.nn.embedding_lookup(all_skt_hint_mask, parent_hint)
       ''' ['tf.shape(prediction_mask):', [128 6 27]] '''
       position_prediction_mask = tf.nn.embedding_lookup(all_skt_position_hint_mask, position_hint)
       if consider_position_hint == 1:
-        prediction_mask = parent_prediction_mask
-      if consider_position_hint == 2:
-        prediction_mask = tf.bitwise.bitwise_and(parent_prediction_mask, position_prediction_mask)
+        prediction_mask = tf.bitwise.bitwise_and(prediction_mask, parent_prediction_mask)
+      elif consider_position_hint == 2:
+        prediction_mask = tf.bitwise.bitwise_and(prediction_mask, position_prediction_mask)
       elif consider_position_hint == 3:
-        prediction_mask = position_prediction_mask
+        parent_and_position_mask = tf.bitwise.bitwise_and(parent_prediction_mask, position_prediction_mask)
+        prediction_mask = tf.bitwise.bitwise_and(prediction_mask, parent_and_position_mask)
       else:
         assert False
-      r_output = tf.where(tf.equal(prediction_mask, 1), output, -1e30*tf.ones_like(output))
-    else:
-      r_output = output
+#     else:
+#       r_output = output
+    r_output = tf.where(tf.equal(prediction_mask, 1), output, -1e30*tf.ones_like(output))
 #     p_op = tf.print("tf.shape(parent_hint):", tf.shape(parent_hint), "tf.shape(hidden):", tf.shape(hidden), "tf.shape(prediction_mask):", tf.shape(prediction_mask), "tf.shape(output):", tf.shape(output))
 #     with tf.control_dependencies([p_op]):
     return r_output

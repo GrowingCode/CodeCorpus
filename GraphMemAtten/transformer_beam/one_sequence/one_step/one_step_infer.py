@@ -19,11 +19,11 @@ class OneStepStandInfer():
 #     print("tf.shape(self.l_token):" + str(tf.shape(self.l_token)))
     self.i = -1
   
-  def infer_one_step(self, par_hint, pos_hint):
+  def infer_one_step(self, type_hint, par_hint, pos_hint):
     self.i += 1
-    output, _, _, _, new_mems = self.transformer_model.transformer(self.l_token, tf.zeros_like(self.l_token)-1, self.mems, tf.ones_like(self.l_token), par_hint, pos_hint, is_training=False, calculate_loss=False)
+    output, _, _, _, new_mems = self.transformer_model.transformer(self.l_token, tf.zeros_like(self.l_token)-1, self.mems, tf.ones_like(self.l_token), type_hint, par_hint, pos_hint, is_training=False, calculate_loss=False)
     
-    o_ens_probs, o_ens_of_this_node = self.get_loss_caculator().only_compute_predictions(output, par_hint, pos_hint)
+    o_ens_probs, o_ens_of_this_node = self.get_loss_caculator().only_compute_predictions(output, type_hint, par_hint, pos_hint)
     
     new_mems = update_recent_fixed_length_memory(self.mems, new_mems)
     if additional_filter_memory_when_beam_step_inferring:
@@ -47,15 +47,15 @@ class OneStepMultiInfer():
     self.last_token = last_token
     self.i = -1
   
-  def infer_one_step(self, par_hint, pos_hint):
+  def infer_one_step(self, type_hint, par_hint, pos_hint):
     self.i += 1
     if self.i == 0:
-      output, _, _, _, _ = self.transformer_model.transformer(self.last_token, tf.zeros_like(self.last_token)-1, self.mems_before_last, tf.ones_like(self.last_token), par_hint, pos_hint, is_training=0, calculate_loss=False)
+      output, _, _, _, _ = self.transformer_model.transformer(self.last_token, tf.zeros_like(self.last_token)-1, self.mems_before_last, tf.ones_like(self.last_token), type_hint, par_hint, pos_hint, is_training=0, calculate_loss=False)
       self.output = output
     
     transfer_i = tf.expand_dims(tf.expand_dims(self.i, 0), 1)
     t_h = self.multi_decode_model.multi_position_transfer.transfer(transfer_i, self.output)
-    o_ens_probs, o_ens_of_this_node = self.get_loss_caculator().only_compute_predictions(t_h, par_hint, pos_hint)
+    o_ens_probs, o_ens_of_this_node = self.get_loss_caculator().only_compute_predictions(t_h, type_hint, par_hint, pos_hint)
     return o_ens_probs, o_ens_of_this_node
   
   def record_just_inferred_en(self, inferred_en):
@@ -65,7 +65,7 @@ class OneStepMultiInfer():
     return self.multi_decode_model.loss_calculator
 
 
-def framework_skt_infer(inferrer, parent_hint, position_hint, steps): # @UnusedVariable
+def framework_skt_infer(inferrer, type_hint, parent_hint, position_hint, steps): # @UnusedVariable
   ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
 #     all_mems = update_recent_fixed_length_memory(mems_before_last, old_new_mems)
   ''' output shape should be [predict_length batch_size feature_size] '''
@@ -134,7 +134,7 @@ def framework_skt_infer(inferrer, parent_hint, position_hint, steps): # @UnusedV
 #     p_op = tf.print("tf.shape(t_h):", tf.shape(t_h), "tf.shape(par_hint):", tf.shape(par_hint))
 #     with tf.control_dependencies([p_op]):
 #     _, o_ens_of_this_node = inferrer.get_loss_caculator().only_compute_predictions(t_h, par_hint, pos_hint)
-    _, o_ens_of_this_node = inferrer.infer_one_step(par_hint, pos_hint)
+    _, o_ens_of_this_node = inferrer.infer_one_step(type_hint, par_hint, pos_hint)
     guide_en_tf = o_ens_of_this_node[0][0][guide[i]]
 #     p_op = tf.print("o_ens_of_this_node:", o_ens_of_this_node, "par_hint:", par_hint)
 #     with tf.control_dependencies([p_op]):
@@ -182,7 +182,7 @@ def framework_skt_infer(inferrer, parent_hint, position_hint, steps): # @UnusedV
   return computed_en_seqs
 
 
-def framework_token_infer(inferrer, parent_hint, position_hint, steps):
+def framework_token_infer(inferrer, type_hint, parent_hint, position_hint, steps):
   ''' here mems_before_last shape must be [n_layer memory_length 1 feature_size] '''
 #     all_mems = update_recent_fixed_length_memory(mems_before_last, old_new_mems)
   ''' output shape should be [predict_length batch_size feature_size] '''
@@ -229,7 +229,7 @@ def framework_token_infer(inferrer, parent_hint, position_hint, steps):
 #     p_op = tf.print("tf.shape(t_h):", tf.shape(t_h), "tf.shape(par_hint):", tf.shape(par_hint))
 #     with tf.control_dependencies([p_op]):
 #     _, o_ens_of_this_node = inferrer.get_loss_caculator().only_compute_predictions(t_h, par_hint, pos_hint)
-    _, o_ens_of_this_node = inferrer.infer_one_step(par_hint, pos_hint)
+    _, o_ens_of_this_node = inferrer.infer_one_step(type_hint, par_hint, pos_hint)
     guide_en_tf = o_ens_of_this_node[0][0][guide[i]]
 #     p_op = tf.print("o_ens_of_this_node:", o_ens_of_this_node, "par_hint:", par_hint)
 #     with tf.control_dependencies([p_op]):

@@ -43,6 +43,9 @@ class OneSeqBeam():
       temp_valid_mask = tf.slice(valid_mask, [idx], [seq_part_size])
       temp_valid_mask = tf.expand_dims(temp_valid_mask, axis=1)
       
+      temp_token_type = tf.slice(token_type, [idx], [seq_part_size])
+      temp_token_type = tf.expand_dims(temp_token_type, axis=1)
+      
       temp_parent_hint = tf.slice(parent_hint, [idx], [seq_part_size])
       temp_parent_hint = tf.expand_dims(temp_parent_hint, axis=1)
       
@@ -51,7 +54,7 @@ class OneSeqBeam():
       
       temp_mems = get_recent_fixed_length_memory(all_mems, oracle_mem_len)
       
-      _, _, predictions, _, new_mems = self.transformer_model.transformer(dec_inp, target, temp_mems, temp_valid_mask, temp_parent_hint, temp_position_hint, is_training=0)#, mem_len=oracle_mem_len
+      _, _, predictions, _, new_mems = self.transformer_model.transformer(dec_inp, target, temp_mems, temp_valid_mask, temp_token_type, temp_parent_hint, temp_position_hint, is_training=0)#, mem_len=oracle_mem_len
       if debug_in_test_beam:
         print("dec_inp:" + str(tf.squeeze(dec_inp).numpy()) + "#predictions:" + str(tf.squeeze(predictions).numpy()) + "#token_type:" + str(tf.squeeze(token_type).numpy()) + "#valid_mask:" + str(tf.squeeze(valid_mask).numpy()))
       
@@ -112,7 +115,7 @@ class OneSeqBeam():
       token_last_before = whole_seq[token_last_before_index]
       r_token_last_before = tf.expand_dims(tf.expand_dims(token_last_before, axis=0), axis=1)
 #       print("r_token_last_before:" + str(r_token_last_before))
-      skt_f_each_acc, skt_f_whole_acc, skt_f_count, token_f_each_acc, token_f_whole_acc, token_f_count = self.infer_and_compute_accuracy(token_mems_before_last, r_token_last_before, token_part_seq, token_part_parent_hint, token_part_position_hint, token_part_token_type, token_part_seq_exact, decode_mode)
+      skt_f_each_acc, skt_f_whole_acc, skt_f_count, token_f_each_acc, token_f_whole_acc, token_f_count = self.infer_and_compute_accuracy(token_mems_before_last, r_token_last_before, token_part_seq, token_part_token_type, token_part_parent_hint, token_part_position_hint, token_part_token_type, token_part_seq_exact, decode_mode)
       skt_each_acc += skt_f_each_acc
       skt_whole_acc += skt_f_whole_acc
       skt_count += skt_f_count
@@ -134,7 +137,7 @@ class OneSeqBeam():
     return skt_each_acc, skt_whole_acc, skt_count, token_each_acc, token_whole_acc, token_count, all_mems
   
   # part_valid_mask, 
-  def infer_and_compute_accuracy(self, mems_before_last, last_token_before_part_seq, part_seq, part_parent_hint, part_position_hint, part_token_type, part_seq_exact, decode_mode):
+  def infer_and_compute_accuracy(self, mems_before_last, last_token_before_part_seq, part_seq, part_type_hint, part_parent_hint, part_position_hint, part_token_type, part_seq_exact, decode_mode):
     ptt_np = part_token_type.numpy()
     e0 = np.all(ptt_np == 0)
     e1 = np.all(ptt_np == 1)
@@ -162,7 +165,7 @@ class OneSeqBeam():
       assert False
 #     print("inferred_ens.numpy():" + str(inferred_ens.numpy()))
     if e0:
-      inferred_ens = framework_skt_infer(inferrer, part_parent_hint, part_position_hint, predict_len)
+      inferred_ens = framework_skt_infer(inferrer, part_type_hint, part_parent_hint, part_position_hint, predict_len)
 #       if skeleton_mode == skeleton_e:
 #         skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_accuracy_of_sequences(inferred_ens, part_seq_exact, part_valid_mask, compute_one_whole=accuracy_based_on_whole)
 #       elif skeleton_mode == skeleton_pe:
@@ -178,7 +181,7 @@ class OneSeqBeam():
       skt_f_each_acc, skt_f_whole_acc, skt_f_count = compute_accuracy_of_sequences(r_inferred_ens, r_part_seq_exact, compute_one_whole=accuracy_based_on_whole)
       token_f_each_acc, token_f_whole_acc, token_f_count = tf.zeros([len(top_ks)], float_type), tf.zeros([len(top_ks)], float_type), tf.constant(0, int_type)
     elif e1:
-      r_inferred_ens = framework_token_infer(inferrer, part_parent_hint, part_position_hint, predict_len)
+      r_inferred_ens = framework_token_infer(inferrer, part_type_hint, part_parent_hint, part_position_hint, predict_len)
       skt_f_each_acc, skt_f_whole_acc, skt_f_count = tf.zeros([len(top_ks)], float_type), tf.zeros([len(top_ks)], float_type), tf.constant(0, int_type)
       r_part_seq_exact = replace_unk_with_none_in_list(part_seq_exact.numpy().tolist())
       token_f_each_acc, token_f_whole_acc, token_f_count = compute_accuracy_of_sequences(r_inferred_ens, r_part_seq_exact, compute_one_whole=accuracy_based_on_whole)
