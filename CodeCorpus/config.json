@@ -1,5 +1,5 @@
 {
-    "witness" : ["apache-maven-3.6.1-src"],
+    "witness" : ["000066#lucene-core-common#dataset"],
     "data" : ["apache-maven-3.6.1-src"],
     "preprocess" : ["log4j-trunk.zip"]
 }
