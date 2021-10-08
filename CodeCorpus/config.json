@@ -1,5 +1,5 @@
 {
-    "witness" : ["apache-maven-3.6.1-src"],
-    "data" : ["apache-maven-3.6.1-src"],
+    "witness" : ["simple"],
+    "data" : ["simple"],
     "preprocess" : ["log4j-trunk.zip"]
 }
