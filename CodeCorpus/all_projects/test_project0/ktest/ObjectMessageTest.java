@@ -14,7 +14,7 @@
  * See the license for the specific language governing permissions and
  * limitations under the license.
  */
-package test;
+package ktest;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
