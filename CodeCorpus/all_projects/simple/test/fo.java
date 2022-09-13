@@ -64,5 +64,31 @@ public class fo extends JFrame {
 		}
 		return true;
 	}
+	
+	public int test(int a, int b, int c) {
+        if((a % 2 == 0 && b % 3 == 0 && c % 4 != 0) ||
+                (a % 2 == 0 && b % 3 == 0 && c % 4 != 0)) {
+            return 1;
+        }
+        return 0;
+    }
+    
+    public int testOk(int a, int b, int c) {
+        if((a % 2 == 0 && b % 2 == 0 && c % 2 != 0) ||
+                (a % 2 == 0 && b % 2 == 0 && c % 2 == 0)) {
+            return 1;
+        }
+        return 0;
+    }
+    
+    public int testRepeatingConfusingOk(String s1, String s2) {
+        if(s1.equals("a") && 
+                s2.equals("b") || s1.equals("c") && 
+                s2.equals("b") || s1.equals("c") && 
+           s2.equals("d")) {
+            return 1;
+        }
+        return 0;
+    }
 
 }
