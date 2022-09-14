@@ -179,7 +179,7 @@ class ModelRunner():
         '''
         valid_average_loss = 0.0
         valid_average_accuracy = np.zeros([len(top_ks)], dtype=np_float_type).tolist()
-        if valid_avg:
+        if valid_avg and valid_avg['token_count'] != None:
           valid_average_loss = valid_avg["average_token_loss"]
           valid_average_accuracy = valid_avg["average_token_accuracy"]
           print(str(turn+1) + "/" + str(max_train_epoch) + " turn" + "#" + json.dumps(valid_avg))
@@ -411,7 +411,7 @@ def compute_average(dict_t):
       first_k_part = k[0:idx]
       k_count = first_k_part + '_count'
       k_tm = "average_" + k
-      divd = dict_t[k_count].astype(np_float_type)
+      divd = np_float_type(dict_t[k_count])
       if divd == 0.0:
 #         divd = 0.0000000001
         r[k_tm] = 0.0

@@ -22,6 +22,8 @@ def parse_function(example_proto):
             'token_type_shape': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
             'origin_sequence_exact': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
             'origin_sequence_exact_shape': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
+            'token_relative_info': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
+            'token_relative_info_shape': tf.io.FixedLenFeature(shape=(), dtype=tf.string),
           }
   
   parsed_example = tf.io.parse_single_example(example_proto, dics)
@@ -41,6 +43,8 @@ def parse_function(example_proto):
   parsed_example['token_type_shape'] = tf.io.decode_raw(parsed_example['token_type_shape'], int_type)
   parsed_example['origin_sequence_exact'] = tf.io.decode_raw(parsed_example['origin_sequence_exact'], int_type)
   parsed_example['origin_sequence_exact_shape'] = tf.io.decode_raw(parsed_example['origin_sequence_exact_shape'], int_type)
+  parsed_example['token_relative_info'] = tf.io.decode_raw(parsed_example['token_relative_info'], int_type)
+  parsed_example['token_relative_info_shape'] = tf.io.decode_raw(parsed_example['token_relative_info_shape'], int_type)
   
 #   print(parsed_example['origin_sequence'])
 #   print(parsed_example['origin_sequence_shape'])
@@ -52,7 +56,7 @@ def parse_function(example_proto):
   parsed_example['seq_part_skip'] = tf.reshape(parsed_example['seq_part_skip'], parsed_example['seq_part_skip_shape'])
   parsed_example['token_type'] = tf.reshape(parsed_example['token_type'], parsed_example['token_type_shape'])
   parsed_example['origin_sequence_exact'] = tf.reshape(parsed_example['origin_sequence_exact'], parsed_example['origin_sequence_exact_shape'])
-  
+  parsed_example['token_relative_info'] = tf.reshape(parsed_example['token_relative_info'], parsed_example['token_relative_info_shape'])
   return parsed_example
   
 
